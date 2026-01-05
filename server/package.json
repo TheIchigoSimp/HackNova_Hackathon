@@ -1,7 +1,7 @@
 {
   "name": "server",
   "version": "1.0.0",
-  "description": "Path Genie is an interactive web application that helps users create personalized learning paths based on a topic of interest. By entering a title (e.g., \"Learn Python Programming\"), users can generate a detailed, visual learning path using the **React Flow** library. The application leverages the **Sonar API by Perplexity** to fetch relevant learning resources, including YouTube videos, blogs, articles, and more, to enrich the learning experience.",
+  "description": "Path Genie is an interactive web application that helps users create personalized learning paths based on a topic of interest. By entering a title (e.g., \"Learn Python Programming\"), users can generate a detailed, visual learning path using the **React Flow** library. The application leverages the **Groq API** to fetch relevant learning resources, including YouTube videos, blogs, articles, and more, to enrich the learning experience.",
   "main": "index.js",
   "type": "module",
   "scripts": {
@@ -17,8 +17,8 @@
     "react",
     "flow",
     "api",
-    "sonar",
-    "perplexity"
+    "groq",
+    "ai"
   ],
   "author": "omiii",
   "license": "ISC",
@@ -34,6 +34,7 @@
     "docx": "^9.5.0",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
+    "groq-sdk": "^0.37.0",
     "jsonwebtoken": "^9.0.2",
     "markdown-it": "^14.1.0",
     "markmap-lib": "^0.18.11",

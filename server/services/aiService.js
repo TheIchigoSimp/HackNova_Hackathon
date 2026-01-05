@@ -1,13 +1,17 @@
-import axios from 'axios';
+import Groq from 'groq-sdk';
 import dotenv from 'dotenv';
 dotenv.config();
 
-const fetchPerplexityData = async (type, input, mainTopic, userProfile = {}) => {
-  const API_KEY = process.env.PERPLEXITY_API_KEY;
-  const BASE_URL = 'https://api.perplexity.ai';
+const fetchGroqData = async (type, input, mainTopic, userProfile = {}) => {
+  const API_KEY = process.env.GROQ_API_KEY;
+  
+  if (!API_KEY) {
+    throw new Error('GROQ_API_KEY is not configured');
+  }
 
-  // // Extract user profile details
-  // const { profession = 'unknown', experienceYears = 0 } = userProfile;
+  const groq = new Groq({
+    apiKey: API_KEY,
+  });
 
   let systemPrompt;
   switch (type) {
@@ -15,7 +19,7 @@ const fetchPerplexityData = async (type, input, mainTopic, userProfile = {}) => 
       systemPrompt = `
 **System Instructions for Generating a Basic Mindmap**
 
-You are an AI assistant **with web search capabilities**, tasked with creating a personalized learning mindmap/roadmap for a **${userProfile} (consider this only if valid preference)**. The mindmap/roadmap must be tailored to the topic "${input}" and the user's professional background.
+You are an AI assistant tasked with creating a personalized learning mindmap/roadmap for a **${userProfile} (consider this only if valid preference)**. The mindmap/roadmap must be tailored to the topic "${input}" and the user's professional background.
 
 **Output Requirements:**
 - Generate a hierarchical mindmap as a **strict matching JSON tree** with **exactly 6 nodes and more 2 sub nodes for each**, including multiple levels.
@@ -31,20 +35,21 @@ You are an AI assistant **with web search capabilities**, tasked with creating a
 - For 2-5 years: Include **intermediate topics**.
 - For > 5 years: Add **advanced or specialized areas**.
 - Ensure content is **relevant** to the user's profession and **accurate**.
+- Use your knowledge base to provide comprehensive and up-to-date information.
 
 **Important Notes:**
 - **Do not include any text outside the JSON object.**
 - **Avoid duplicate node labels.**
-- **Use web search to verify information** and ensure accuracy.
+- **Provide accurate and well-structured content.**
 - **Do not hallucinate or invent content.**
 
-**Example Output:** (do not add any extra text like json annotaion)
+**Example Output:** (do not add any extra text like json annotation)
 {
   "nodes": [
     {"data": {"label": "Root Topic", "shortDesc": "Overview of the topic"}, "parentIndex": null},
     {"data": {"label": "Child 1", "shortDesc": "Basic concept"}, "parentIndex": 0}
   ],
-  "tags": ["tags related to the topic seperated by commas (4-5 tags)"]
+  "tags": ["tags related to the topic separated by commas (4-5 tags)"]
 }
 **Final Instruction:** Your entire response must be the **JSON object only**. No greetings or additional text.
 `;
@@ -53,7 +58,7 @@ You are an AI assistant **with web search capabilities**, tasked with creating a
       systemPrompt = `
 **System Instructions for Generating Subtopics**
 
-You are an AI assistant **with web search capabilities**, helping a user with **${userProfile} (consider this only if valid preference)**. expand their learning mindmap on "${input}". Generate **2-5 subtopics considering given topic and main-topic is ${mainTopic}**.
+You are an AI assistant helping a user with **${userProfile} (consider this only if valid preference)**. expand their learning mindmap on "${input}". Generate **2-5 subtopics considering given topic and main-topic is ${mainTopic}**.
 
 **Output Requirements:**
 - Provide a **strict matching JSON tree** with a "nodes" array.
@@ -65,14 +70,15 @@ You are an AI assistant **with web search capabilities**, helping a user with **
 **Content Guidelines:**
 - Tailor subtopics to the user's **profession** and **experience level**.
 - Focus on **less common or advanced aspects** to ensure uniqueness.
+- Use your comprehensive knowledge to provide accurate information.
 
 **Important Notes:**
 - **Do not include any text outside the JSON object.**
 - **Ensure subtopics are unique and relevant. (do not repeat input topic itself)**
-- **Use web search to verify information.**
+- **Provide accurate and well-researched information.**
 - **Do not hallucinate or repeat typical topics.**
 
-**Example Output:**(do not add any extra text like json annotaion)
+**Example Output:**(do not add any extra text like json annotation)
 {
   "nodes": [
     {"data": {"label": "Subtopic 1", "shortDesc": "Advanced aspect"}, "parentIndex": null},
@@ -86,7 +92,7 @@ You are an AI assistant **with web search capabilities**, helping a user with **
       systemPrompt = `
 **System Instructions for Generating Learning Resources**
 
-You are an Personalize AI assistant with web search capabilities, helping a user with **${userProfile} (consider this only if valid preference)** tasked with providing personalized learning resources for a user who may be a student or professional from any sector. The subtopic topic is ${input} and main topic is ${mainTopic}.
+You are a Personalized AI assistant helping a user with **${userProfile} (consider this only if valid preference)** tasked with providing personalized learning resources for a user who may be a student or professional from any sector. The subtopic topic is ${input} and main topic is ${mainTopic}.
 
 **Output Requirements:**
 
@@ -95,7 +101,7 @@ You are an Personalize AI assistant with web search capabilities, helping a user
   - "images": An array of objects, each with "url", "alt", and "caption". URLs must be direct links to images.
   - "videos": An array of objects, each with "url", "title", and "description". Prefer YouTube videos or other educational video platforms.
   - "notes": An array of objects, each with "content". Notes should be concise summaries or key points.
-  - "markdown": An array of objects, each with "content". Markdown must be **detailed,topic realted, well-structured, and include visuals like tables**. It should support **GitHub Flavored Markdown (GFM)** features such as headings, lists, code blocks, task lists, and footnotes. Include **project links** and other relevant web materials where appropriate.
+  - "markdown": An array of objects, each with "content". Markdown must be **detailed, topic related, well-structured, and include visuals like tables**. It should support **GitHub Flavored Markdown (GFM)** features such as headings, lists, code blocks, task lists, and footnotes. Include **project links** and other relevant web materials where appropriate.
  - "diagrams": An array containing exactly one object with:
     -- "content": A string representing a diagram in markmap-compatible text format (e.g., Markdown-like hierarchical syntax). The diagram must relate to the topic and include links and related points to deepen understanding.
     -- "format": Must be "markmap".
@@ -108,17 +114,18 @@ You are an Personalize AI assistant with web search capabilities, helping a user
   - For experts with > 5 years of experience: Provide **advanced and specialized materials**.
 - Make sure the resources are **accessible and, if possible, free**.
 - Include a variety of resource types to cater to different learning preferences (e.g., visual learners, readers, etc.).
+- Use your knowledge base to provide well-known, reputable resources and URLs.
 
 **Important Notes:**
 
 - Do not include any text outside the JSON object.
-- Use web search to verify all resources and ensure they are real, working, and relevant.
-- Do not hallucinate or assume URLs; they must be actual working links.
+- Use your knowledge to provide real, working, and relevant resources.
+- Provide commonly known URLs and resources that are likely to be available.
 - Ensure markdown content is **detailed and includes visuals like tables** where appropriate.
 - Tailor the content to be understandable by a **broad audience**, including students and professionals from any sector.
 - If no specific profession is provided, generate resources suitable for a general audience interested in learning about the topic.
 
-**Example Output:**(do not add any extra text like json annotaion)
+**Example Output:**(do not add any extra text like json annotation)
 {
   "resources": {
     "links": [
@@ -149,13 +156,13 @@ You are an Personalize AI assistant with web search capabilities, helping a user
     ],
     "markdown": [
       {
-        "content": "# Markdown Content\n\n## Key Points\n- Point 1\n- Point 2\n\n[Link to more resources](https://example.com)"
+        "content": "# Markdown Content\\n\\n## Key Points\\n- Point 1\\n- Point 2\\n\\n[Link to more resources](https://example.com)"
 
       }
     ],
     "diagrams": [
       {
-        "content": "# Topic Overview\n- Main Point\n  - Subpoint 1\n  - Subpoint 2",
+        "content": "# Topic Overview\\n- Main Point\\n  - Subpoint 1\\n  - Subpoint 2",
         "format": "markmap"
       }
     ],
@@ -217,25 +224,19 @@ You are an AI assistant **with web search capabilities**, summarizing PDF conten
   ];
 
   try {
-    const response = await axios.post(
-      `${BASE_URL}/chat/completions`,
-      {
-        model: 'sonar-pro',
-        messages,
-        stream: false,
-        web_search_options: {
-          search_context_size: 'high',
-        },
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    const chatCompletion = await groq.chat.completions.create({
+      messages,
+      model: 'openai/gpt-oss-120b', 
+      temperature: 0.7,
+      max_tokens: 4000,
+      top_p: 0.9,
+    });
 
-    const text = response.data.choices[0].message.content;
+    const text = chatCompletion.choices[0]?.message?.content;
+    if (!text) {
+      throw new Error('No response content from Groq API');
+    }
+
     try {
       return JSON.parse(text);
     } catch (parseError) {
@@ -243,23 +244,23 @@ You are an AI assistant **with web search capabilities**, summarizing PDF conten
       throw new Error('Invalid response format from AI');
     }
   } catch (error) {
-    console.error('Perplexity API error:', error.message, error.response?.data);
-    throw new Error('Failed to fetch data from Perplexity');
+    console.error('Groq API error:', error.message);
+    throw new Error('Failed to fetch data from Groq');
   }
 };
 
 export const generateBasicMindmap = async (title, userProfile) => {
-  const data = await fetchPerplexityData('basicMindmap', title, title, userProfile);
+  const data = await fetchGroqData('basicMindmap', title, title, userProfile);
   return data; // Returns { nodes: [...] }
 };
 
 export const generateSubtopics = async (parentLabel, mainTopic, userProfile) => {
-  const data = await fetchPerplexityData('subtopics', parentLabel, mainTopic, userProfile);
+  const data = await fetchGroqData('subtopics', parentLabel, mainTopic, userProfile);
   return data; // Returns { nodes: [...] }
 };
 
 export const gatherResources = async (label, mainTopic, userProfile) => {
-  const data = await fetchPerplexityData('resources', label, mainTopic, userProfile);
+  const data = await fetchGroqData('resources', label, mainTopic, userProfile);
   return data; // Returns { resources: { links: [], images: [], ... } }
 };
 

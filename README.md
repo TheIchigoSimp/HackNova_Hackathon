@@ -1,7 +1,7 @@
 
 # Path Genie
 
-Welcome to  **Path Genie** ! 🎉 Your ultimate companion for creating personalized learning journeys. Whether you're diving into "Learn Python Programming" or exploring "Quantum Physics," Path Genie transforms your topic of interest into a vibrant, interactive learning path. Using the magic of  **React Flow** , we visualize your learning milestones, and with the power of  **Perplexity's Sonar API** , we fetch top-notch resources like YouTube videos, blogs, and articles to supercharge your learning experience. Let's embark on this adventure together! 🚀
+Welcome to  **Path Genie** ! 🎉 Your ultimate companion for creating personalized learning journeys. Whether you're diving into "Learn Python Programming" or exploring "Quantum Physics," Path Genie transforms your topic of interest into a vibrant, interactive learning path. Using the magic of  **React Flow** , we visualize your learning milestones, and with the power of  **Groq's AI API** , we fetch top-notch resources like YouTube videos, blogs, and articles to supercharge your learning experience. Let's embark on this adventure together! 🚀
 
 ## Table of Contents
 
@@ -19,7 +19,7 @@ Welcome to  **Path Genie** ! 🎉 Your ultimate companion for creating personali
 ## Features
 
 * 🌟  **Dynamic Learning Paths** : Watch your topic transform into a structured, interactive journey with React Flow.
-* 📚  **Resource Integration** : Get the best learning materials handpicked by Perplexity's Sonar API.
+* 📚  **Resource Integration** : Get the best learning materials powered by Groq's AI API.
 * 🖱️  **User-Friendly Interface** : Effortlessly enter topics and navigate your visual path.
 * ✏️  **Customizable Paths** : Tweak nodes and connections to make the path truly yours.
 * 📱  **Responsive Design** : Learn on the go, whether on desktop or mobile.
@@ -29,7 +29,7 @@ Welcome to  **Path Genie** ! 🎉 Your ultimate companion for creating personali
 * 🖥️  **Frontend** : React, React Flow (for those awesome visual paths)
 * 🛠️  **Backend** : Node.js, Express
 * 🗄️  **Database** : MongoDB (keeping your data safe)
-* 🔌  **API** : Sonar API by Perplexity (your resource genie)
+* 🔌  **API** : Groq AI API (your intelligent resource genie)
 * 🔐  **Authentication** : Better Auth (email/password & GitHub SSO)
 * 🎨  **Styling** : Tailwind CSS (looking sharp!)
 * ⚙️  **Others** : Vite, Mongoose, Axios (the behind-the-scenes heroes)
@@ -50,7 +50,7 @@ Before you start, make sure you have:
 * 🟢 Node.js (v18 or later)
 * 🟢 MongoDB (local or cloud, like MongoDB Atlas)
 * 🟢 Git
-* 🟢 A Perplexity Sonar API key (grab it from [Perplexity AI](https://www.perplexity.ai/))
+* 🟢 A Groq API key (grab it from [Groq Console](https://console.groq.com/))
 * 🟢 A GitHub OAuth app (for that smooth SSO login)
 
 ## Installation
@@ -93,7 +93,7 @@ GITHUB_CLIENT_SECRET=your_github_client_secret
 MONGODB_URI=your_mongodb_uri
 CLIENT_URL=http://localhost:5173
 SERVER_URL=http://localhost:8000
-PERPLEXITY_API_KEY=your_perplexity_api_key
+GROQ_API_KEY=your_groq_api_key
 NODE_ENV=development
 ```
 
@@ -132,7 +132,7 @@ Head to `http://localhost:5173` to see the magic!
 * Visit `http://localhost:5173` and log in (or sign up) with email/password or GitHub.
 * Type in a topic like "Learn Python Programming" and hit enter.
 * Watch as Path Genie crafts a beautiful learning path with React Flow.
-* Click on nodes to discover curated resources from Perplexity's Sonar API.
+* Click on nodes to discover curated resources from Groq's AI API.
 
 4. **Make It Yours** ✏️:
 
@@ -211,7 +211,7 @@ Please follow our Code of Conduct and ensure your code adheres to the project’
 ## Acknowledgements
 
 * [React Flow](https://reactflow.dev/) for the interactive flow-based UI.
-* [Perplexity Sonar API](https://www.perplexity.ai/) for providing learning resources.
+* [Groq AI API](https://groq.com/) for providing intelligent learning resources.
 * [Better Auth](https://www.better-auth.com/) for secure authentication.
 * [Mongoose](https://mongoosejs.com/) for MongoDB integration.
 * The open-source community for their invaluable tools and resources.
