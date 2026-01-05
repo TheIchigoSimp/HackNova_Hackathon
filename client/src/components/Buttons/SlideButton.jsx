@@ -24,7 +24,7 @@ const BaseButton = styled.button`
   font-size: 1rem; /* base font-size, adjustable via parent */
   font-family: inherit;
 
-  width: ${(props) => (props.fullWidth ? "100%" : "auto")};
+  width: ${(props) => (props.$fullWidth ? "100%" : "auto")};
   max-width: 12rem;
   height: auto;
 
@@ -172,7 +172,7 @@ const SlideButton = ({ text, icon, style, onClick, fullWidth, disabled }) => {
       <BaseButton
         style={style || {}}
         type="button" /* avoids accidental form submits */
-        fullWidth={fullWidth} /* custom prop we read in styled-component */
+        $fullWidth={fullWidth} /* custom prop we read in styled-component */
         aria-label={text} /* good practice for screen readers */
         disabled={disabled} /* disable button if needed */
       >

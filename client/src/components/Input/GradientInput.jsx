@@ -55,7 +55,7 @@ const AnimatedPlaceholder = styled.span`
   color: rgba(255, 255, 255, 0.7);
   pointer-events: none;
   transition: opacity 0.3s ease;
-  opacity: ${({ isVisible }) => (isVisible ? 1 : 0)};
+  opacity: ${({ $isVisible }) => ($isVisible ? 1 : 0)};
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -122,7 +122,7 @@ const GradientInput = ({
         }}
       />
       {value === "" && !isInputFocused && (
-        <AnimatedPlaceholder isVisible={isVisible}>
+        <AnimatedPlaceholder $isVisible={isVisible}>
           {placeholders[currentIndex]}
         </AnimatedPlaceholder>
       )}
