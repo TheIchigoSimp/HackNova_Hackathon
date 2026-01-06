@@ -39,7 +39,7 @@ const Hero = () => {
             <i>Define Your Path, Achieve Your Goals!</i>
           </p>
           <p className="relative z-20 text-white  text-[20px] font-bold  text-center">
-            Powered by Perplexity's Sonar API !
+            Powered by Generative AI !
           </p>
 
           <div className="flex justify-center mt-8">

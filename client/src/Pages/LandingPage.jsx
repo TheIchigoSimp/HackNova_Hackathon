@@ -16,7 +16,7 @@ const LandingPage = () => {
         <Hero />
         <Grid />
       </div>
-      <p className="relative text-white mb-5">Made with ❤ for Perplexity's Hackthon 🧑🏻‍💻</p>
+      <p className="relative text-white mb-5">Made for AI-powered learning 🧑🏻‍💻</p>
       </main>
     </PageLayout>
   );
