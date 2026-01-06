@@ -1,7 +1,7 @@
 {
   "name": "pathgenie",
   "version": "1.5.0",
-  "description": "Path Genie is an interactive web application that helps users create personalized learning paths based on a topic of interest. By entering a title (e.g., \"Learn Python Programming\"), users can generate a detailed, visual learning path using the **React Flow** library. The application leverages the **Groq API** to fetch relevant learning resources, including YouTube videos, blogs, articles, and more, to enrich the learning experience.",
+  "description": "Path Genie is an interactive web application that helps users create personalized learning paths based on a topic of interest. By entering a title (e.g., \"Learn Python Programming\"), users can generate a detailed, visual learning path using the **React Flow** library. The application leverages **Google's Gemini AI** to fetch relevant learning resources, including YouTube videos, blogs, articles, and more, to enrich the learning experience.",
   "homepage": "https://github.com/prathmbavge/PathGenie#readme",
   "scripts": {
     "install:all": "npm install && cd client && npm install && cd ../server && npm install",

@@ -39,7 +39,7 @@ const Hero = () => {
             <i>Define Your Path, Achieve Your Goals!</i>
           </p>
           <p className="relative z-20 text-white  text-[20px] font-bold  text-center">
-            Powered by Generative AI !
+            Powered by Google's Gemini AI !
           </p>
 
           <div className="flex justify-center mt-8">

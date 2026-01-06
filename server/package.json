@@ -1,7 +1,7 @@
 {
   "name": "server",
   "version": "1.0.0",
-  "description": "Path Genie is an interactive web application that helps users create personalized learning paths based on a topic of interest. By entering a title (e.g., \"Learn Python Programming\"), users can generate a detailed, visual learning path using the **React Flow** library. The application leverages the **Groq API** to fetch relevant learning resources, including YouTube videos, blogs, articles, and more, to enrich the learning experience.",
+  "description": "Path Genie is an interactive web application that helps users create personalized learning paths based on a topic of interest. By entering a title (e.g., \"Learn Python Programming\"), users can generate a detailed, visual learning path using the **React Flow** library. The application leverages **Google's Gemini AI** to fetch relevant learning resources, including YouTube videos, blogs, articles, and more, to enrich the learning experience.",
   "main": "index.js",
   "type": "module",
   "scripts": {
@@ -17,12 +17,13 @@
     "react",
     "flow",
     "api",
-    "groq",
-    "ai"
+    "gemini",
+    "google-ai"
   ],
   "author": "omiii",
   "license": "ISC",
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "axios": "^1.9.0",
     "bcrypt": "^5.1.1",
     "better-auth": "^1.2.7",
