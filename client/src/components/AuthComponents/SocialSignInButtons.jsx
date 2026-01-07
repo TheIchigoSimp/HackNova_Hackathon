@@ -19,15 +19,13 @@ const SocialSignInButtons = ({ setError }) => {
         text="Google"
         icon={<FaGoogle className="text-white" />}
         onClick={() => handleSocialSignIn("google")}
-        fullWidth={true}
-        style={{ width: "100%", maxWidth: "180px" }}
+        style={{ width: "220px", maxWidth: "100%" }}
       />
       <SlideButton
         text="GitHub"
         icon={<FaGithub className="text-white" />}
         onClick={() => handleSocialSignIn("github")}
-        fullWidth={true}
-        style={{ width: "100%", maxWidth: "180px" }}
+        style={{ width: "220px", maxWidth: "100%" }}
       />
     </div>
   );
@@ -38,7 +36,7 @@ SocialSignInButtons.propTypes = {
 };
 
 SocialSignInButtons.defaultProps = {
-  onError: () => {},
+  onError: () => { },
 };
 
 export default SocialSignInButtons;
