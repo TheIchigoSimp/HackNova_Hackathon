@@ -12,42 +12,52 @@ import { GiMagicLamp } from "react-icons/gi";
  */
 const Hero = () => {
   return (
-    <div className="pb-20 pt-[75px]">
+    <div className="pb-24 pt-[80px]">
+      {/* Subtle grid background */}
       <div
         className={cn(
-          "absolute inset-0",
-          "[background-size:20px_20px]",
-          "[background-image:linear-gradient(to_right,#e4e4e7_1px,transparent_1px),linear-gradient(to_bottom,#e4e4e7_1px,transparent_1px)]",
-          "dark:[background-image:linear-gradient(to_right,#262626_1px,transparent_1px),linear-gradient(to_bottom,#262626_1px,transparent_1px)]"
+          "absolute inset-0 opacity-30",
+          "[background-size:40px_40px]",
+          "[background-image:linear-gradient(to_right,rgba(102,126,234,0.1)_1px,transparent_1px),linear-gradient(to_bottom,rgba(102,126,234,0.1)_1px,transparent_1px)]"
         )}
       />
+      
+      {/* Radial gradient mask */}
       <div className="pointer-events-none absolute inset-0 flex items-center justify-center [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]" />
 
       <div className="flex justify-center align-middle">
-        <div className="max-w-[100vw]">
-          <img
-            src="/pathgenie.png"
-            alt="Pathgenie"
-            className="relative w-[240px] m-auto"
-          />
+        <div className="max-w-[100vw] relative z-10">
+          {/* Logo with glow effect */}
+          <div className="relative">
+            <div className="absolute inset-0 blur-3xl bg-gradient-to-r from-[#667eea]/20 via-[#764ba2]/20 to-[#f093fb]/20 rounded-full scale-150" />
+            <img
+              src="/pathgenie.png"
+              alt="Pathgenie"
+              className="relative w-[200px] m-auto drop-shadow-2xl"
+            />
+          </div>
+          
           <TextGenerateEffect
-            className="text-center md:text-5xl lg:text-6xl"
+            className="text-center md:text-5xl lg:text-6xl mt-6"
             words="Start Your Journey With PathGenie"
           />
 
-          <p className="relative z-20 bg-gradient-to-b from-neutral-200 to-neutral-500 bg-clip-text pb-8 text-[20px] font-bold text-transparent text-center">
-            <i>Define Your Path, Achieve Your Goals!</i>
+          <p className="relative z-20 text-center text-lg md:text-xl mt-6 mb-2">
+            <span className="bg-gradient-to-r from-[#94a3b8] via-[#e2e8f0] to-[#94a3b8] bg-clip-text text-transparent font-medium italic">
+              Define Your Path, Achieve Your Goals!
+            </span>
           </p>
-          <p className="relative z-20 text-white  text-[20px] font-bold  text-center">
-            Powered by Generative AI !
+          
+          <p className="relative z-20 text-center text-sm md:text-base text-[#667eea] font-semibold tracking-wide uppercase">
+            ✨ Powered by Generative AI
           </p>
 
-          <div className="flex justify-center mt-8">
+          <div className="flex justify-center mt-10">
             <SlideButton
               text="Start Magic"
-              icon={<GiMagicLamp size={30} />}
+              icon={<GiMagicLamp size={26} />}
               type="button"
-              style={{ width: "100vw", maxWidth: "250px" }}
+              style={{ width: "100vw", maxWidth: "260px" }}
               fullWidth={true}
               onClick={() => (window.location.href = "/register")}
             />

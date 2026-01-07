@@ -16,7 +16,9 @@ const LandingPage = () => {
         <Hero />
         <Grid />
       </div>
-      <p className="relative text-white mb-5">Made for AI-powered learning 🧑🏻‍💻</p>
+      <p className="relative text-[#94a3b8] mb-8 mt-6 text-sm tracking-wide">
+        Made for AI-powered learning <span className="ml-1">🧑🏻‍💻</span>
+      </p>
       </main>
     </PageLayout>
   );

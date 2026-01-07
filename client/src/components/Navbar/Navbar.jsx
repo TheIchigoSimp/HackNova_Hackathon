@@ -8,34 +8,6 @@ import { useNavbarVisibility } from "../../hooks/useNavbarVisibility";
 import { navLinks, linkBaseClasses, activeLinkClasses } from "./constants";
 import { GrLogin, GrLogout } from "react-icons/gr";
 
-/**
- * A navigation bar component that displays the application's logo,
- * navigation links and a button to sign in or sign out. When the
- * user is signed in, the navigation links are displayed. When the
- * user is signed out, only the sign in button is displayed.
- *
- * The navigation bar is responsive and will hide or show the
- * navigation links based on the screen size. On smaller screens,
- * the navigation links are hidden and a hamburger menu is displayed
- * which can be used to toggle the visibility of the navigation links.
- *
- * The component uses the `useSession` hook from `better-auth` to
- * determine whether the user is signed in or not. When the user is
- * signed in, the component will display the navigation links. When
- * the user is signed out, the component will display a sign in button.
- *
- * The component also uses the `useNavbarVisibility` hook to
- * determine whether the navigation bar should be visible or not.
- * The hook takes two arguments, the `breakpoint` and the `distance`.
- * The `breakpoint` is the screen size at which the navigation bar
- * should be hidden or shown. The `distance` is the distance from the
- * top of the screen to the navigation bar. When the user scrolls
- * past the `distance`, the navigation bar will be hidden. When the
- * user scrolls back up to the `distance`, the navigation bar will
- * be shown.
- *
- * @returns {React.ReactElement} The navigation bar component.
- */
 const Navbar = () => {
   const navigate = useNavigate();
   const { data: session, isPending } = authClient.useSession();
@@ -43,12 +15,10 @@ const Navbar = () => {
   const [isSigningOut, setIsSigningOut] = useState(false);
   const isNavbarVisible = useNavbarVisibility(800, 43);
 
-  // Toggle mobile menu open/close
   const toggleMenu = useCallback(() => {
     setIsMenuOpen((prev) => !prev);
   }, []);
 
-  // Handle sign out
   const handleSignOut = useCallback(async () => {
     setIsSigningOut(true);
     try {
@@ -61,10 +31,9 @@ const Navbar = () => {
     }
   }, [navigate]);
 
-  // Button props for "Sign In" / "Sign Out"
   const AuthButton = () => {
     if (isPending) {
-      return <span className="text-gray-300">Loading...</span>;
+      return <span className="text-[#94a3b8]">Loading...</span>;
     }
 
     if (session?.user) {
@@ -73,8 +42,8 @@ const Navbar = () => {
           text="Sign Out"
           onClick={handleSignOut}
           disabled={isSigningOut}
-          icon={<GrLogout className="w-5 h-5 text-orange" />}
-          style={{ width: "25rem" }}
+          icon={<GrLogout className="w-5 h-5" />}
+          style={{ width: "12rem" }}
         />
       );
     }
@@ -83,28 +52,31 @@ const Navbar = () => {
       <SlideButton
         text="Sign In"
         onClick={() => navigate("/login")}
-        icon={<GrLogin className="w-5 h-5 text-gray-800 dark:text-white" />}
+        icon={<GrLogin className="w-5 h-5" />}
         fullWidth={true}
-        style={{ width: "25rem" }}
+        style={{ width: "12rem" }}
       />
     );
   };
 
   return (
     <nav
-      className={`fixed w-full top-0 z-50 transition-transform duration-300 ${
+      className={`fixed w-full top-0 z-50 transition-all duration-500 ${
         isNavbarVisible
-          ? "transform translate-y-0"
-          : "transform -translate-y-full"
+          ? "transform translate-y-0 opacity-100"
+          : "transform -translate-y-full opacity-0"
       }`}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-15 w-full">
+      {/* Glass background */}
+      <div className="absolute inset-0 bg-[rgba(10,10,15,0.8)] backdrop-blur-xl border-b border-[rgba(102,126,234,0.1)]" />
+      
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16 w-full">
           {/* Logo */}
-          <div className="flex-shrink-0 text-white">
-            <NavLink to="/">
+          <div className="flex-shrink-0">
+            <NavLink to="/" className="block">
               <img
-                className="h-auto max-w-[150px] sm:max-w-[250px]"
+                className="h-auto max-w-[130px] sm:max-w-[180px] transition-transform duration-300 hover:scale-105"
                 src={pathgenie}
                 alt="PathGenie Logo"
               />
@@ -117,7 +89,7 @@ const Navbar = () => {
               onClick={toggleMenu}
               aria-label={isMenuOpen ? "Close menu" : "Open menu"}
               aria-expanded={isMenuOpen}
-              className="text-gray-300 hover:text-white focus:outline-none"
+              className="p-2 rounded-lg text-[#94a3b8] hover:text-white hover:bg-[rgba(102,126,234,0.1)] transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#667eea]"
             >
               <svg
                 className="w-6 h-6"
@@ -147,38 +119,43 @@ const Navbar = () => {
 
           {/* Navigation Links - Desktop */}
           {session?.user && (
-            <div className="hidden md:flex items-center space-x-8">
+            <div className="hidden md:flex items-center space-x-1">
               {navLinks.map(({ to, label }) => (
                 <NavLink
                   key={to}
                   to={to}
                   className={({ isActive }) =>
-                    `${linkBaseClasses} ${isActive ? activeLinkClasses : ""}`
+                    `relative px-4 py-2 text-sm font-medium rounded-lg transition-all duration-300 ${
+                      isActive 
+                        ? "text-white bg-gradient-to-r from-[rgba(102,126,234,0.2)] to-[rgba(118,75,162,0.2)]" 
+                        : "text-[#94a3b8] hover:text-white hover:bg-[rgba(102,126,234,0.1)]"
+                    }`
                   }
                 >
                   {label}
-                  <span className="absolute bottom-0 left-0 w-0 h-px bg-orange-400 transition-all duration-300 group-hover:w-full"></span>
+                  <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-gradient-to-r from-[#667eea] to-[#764ba2] transition-all duration-300 group-hover:w-full"></span>
                 </NavLink>
               ))}
             </div>
           )}
-          {!isMenuOpen &&
-          <AuthButton />
-          }
+          
+          {!isMenuOpen && <AuthButton />}
         </div>
 
         {/* Mobile Menu */}
         {isMenuOpen && session?.user && (
-          <div className="md:hidden  bg-blur-50 backdrop-blur-md rounded-lg shadow-lg p-4">
-            <div className="flex flex-col items-center space-y-4 py-4">
+          <div className="md:hidden absolute top-full left-0 right-0 bg-[rgba(15,15,25,0.95)] backdrop-blur-xl border-b border-[rgba(102,126,234,0.1)] shadow-2xl">
+            <div className="flex flex-col items-center space-y-2 py-6 px-4">
               {navLinks.map(({ to, label }) => (
                 <NavLink
                   key={to}
                   to={to}
                   onClick={toggleMenu}
                   className={({ isActive }) =>
-                    `text-gray-300 hover:text-white transition-all duration-300 ${
-                      isActive ? activeLinkClasses : ""
+                    `w-full text-center py-3 px-4 rounded-lg text-sm font-medium transition-all duration-300 ${
+                      isActive 
+                        ? "text-white bg-gradient-to-r from-[rgba(102,126,234,0.2)] to-[rgba(118,75,162,0.2)]" 
+                        : "text-[#94a3b8] hover:text-white hover:bg-[rgba(102,126,234,0.1)]"
                     }`
                   }
                 >
@@ -186,11 +163,13 @@ const Navbar = () => {
                 </NavLink>
               ))}
 
-              {isPending ? (
-                <span className="text-gray-300">Loading...</span>
-              ) : (
-                <AuthButton />
-              )}
+              <div className="pt-4 w-full flex justify-center">
+                {isPending ? (
+                  <span className="text-[#94a3b8]">Loading...</span>
+                ) : (
+                  <AuthButton />
+                )}
+              </div>
             </div>
           </div>
         )}

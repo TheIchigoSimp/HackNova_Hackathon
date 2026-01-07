@@ -1,32 +1,95 @@
 @import "tailwindcss";
 
-::selection {
-  background-color: #ffcfcf;
-  color: rgb(0, 0, 0);
+/* Modern color palette CSS variables */
+:root {
+  --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --accent-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  --surface-dark: rgba(15, 15, 25, 0.95);
+  --surface-card: rgba(25, 25, 40, 0.8);
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-glow: rgba(102, 126, 234, 0.4);
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --accent-blue: #60a5fa;
+  --accent-purple: #a78bfa;
+  --accent-pink: #f472b6;
+  --accent-orange: #fb923c;
+  --neon-blue: #00d4ff;
+  --neon-pink: #ff006e;
 }
+
+::selection {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #ffffff;
+}
+
 html {
   scroll-behavior: smooth;
 }
+
+/* Custom scrollbar with modern styling */
 ::-webkit-scrollbar {
-  width: 0.3rem;
-  background-color: #f3f4f600;
+  width: 6px;
+  height: 6px;
 }
+
+::-webkit-scrollbar-track {
+  background: rgba(15, 15, 25, 0.5);
+  border-radius: 3px;
+}
+
 ::-webkit-scrollbar-thumb {
-  background-color: #7096ff6b;
-  border-radius: 0rem;
+  background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+  border-radius: 3px;
+  transition: all 0.3s ease;
 }
+
 ::-webkit-scrollbar-thumb:hover {
-  background-color: #84b1ffc4;
+  background: linear-gradient(180deg, #7c8ff0 0%, #8b5cb8 100%);
+  box-shadow: 0 0 10px rgba(102, 126, 234, 0.5);
 }
-*{
-  font-family: "Aref Ruqaa Ink", serif;
 
+* {
+  font-family: "Inter", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
-html{
-  font-size: 17.5px;
+
+html {
+  font-size: 16px;
 }
+
 body {
-  @apply text-white font-stretch-normal;
-  font-family: "Aref Ruqaa Ink", serif;
+  @apply text-white font-stretch-normal antialiased;
+  font-family: "Inter", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: #0a0a0f;
+}
 
+/* Utility classes for consistent styling */
+.glass-effect {
+  background: rgba(25, 25, 40, 0.6);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, #667eea 0%, #f093fb 50%, #f5576c 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.glow-effect {
+  box-shadow: 0 0 20px rgba(102, 126, 234, 0.3),
+              0 0 40px rgba(102, 126, 234, 0.1);
+}
+
+.hover-lift {
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+              box-shadow 0.3s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3),
+              0 0 30px rgba(102, 126, 234, 0.2);
 }

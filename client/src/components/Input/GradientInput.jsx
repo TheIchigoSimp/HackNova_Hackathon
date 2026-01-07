@@ -3,44 +3,52 @@ import styled from "styled-components";
 
 const FormControl = styled.div`
   position: relative;
-  --width-of-input: 300px;
   width: 100%;
 `;
 
 const Input = styled.input`
-  color: #fff;
-  font-size: 1.2rem;
-  background-color: transparent;
+  color: #f8fafc;
+  font-size: 1rem;
+  font-weight: 400;
+  background: rgba(25, 25, 40, 0.6);
+  backdrop-filter: blur(10px);
   width: 100%;
   box-sizing: border-box;
-  padding-inline: 1em;
-  padding-block: 0.8em;
-  border: none;
-  border-bottom: var(--border-height) solid var(--border-before-color);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  padding: 1rem 1.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &:hover {
+    border-color: rgba(102, 126, 234, 0.3);
+    background: rgba(30, 30, 50, 0.7);
+  }
 
   &:focus {
     outline: none;
+    border-color: rgba(102, 126, 234, 0.6);
+    background: rgba(30, 30, 50, 0.8);
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.15),
+                0 0 20px rgba(102, 126, 234, 0.1);
   }
 
   &::placeholder {
-    color: rgba(255, 255, 255, 0.7);
+    color: rgba(148, 163, 184, 0.6);
   }
 `;
 
 const InputBorder = styled.span`
   position: absolute;
-  background: linear-gradient(90deg, #ff6464 0%, #ffbf59 50%, #47c9ff 100%);
-  height: 3px;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+  height: 2px;
   width: 100%;
   bottom: 0;
   left: 0;
+  border-radius: 0 0 10px 10px;
   transform: scaleX(0);
-  transition: transform 0.4s cubic-bezier(0.42, 0, 0.58, 1);
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 
-  ${Input}:hover + & {
-    transform: scaleX(1);
-  }
+  ${Input}:hover + &,
   ${Input}:focus + & {
     transform: scaleX(1);
   }
@@ -50,9 +58,8 @@ const AnimatedPlaceholder = styled.span`
   position: absolute;
   top: 0;
   left: 0;
-  padding-inline: 1em;
-  padding-block: 0.8em;
-  color: rgba(255, 255, 255, 0.7);
+  padding: 1rem 1.25rem;
+  color: rgba(148, 163, 184, 0.7);
   pointer-events: none;
   transition: opacity 0.3s ease;
   opacity: ${({ $isVisible }) => ($isVisible ? 1 : 0)};
@@ -60,17 +67,9 @@ const AnimatedPlaceholder = styled.span`
   overflow: hidden;
   text-overflow: ellipsis;
   width: 100%;
+  font-size: 1rem;
 `;
 
-/**
- * GradientInput
- *
- * A gradient input field component that displays a gradient under the input,
- * and a placeholder that changes every 3 seconds.
- *
- * @param {{ id: string, name: string, type: string, value: string, onChange: Function, placeholders: string[], required: boolean, style: Object, className: string, duration: number }} props
- * @returns {JSX.Element} The GradientInput component.
- */
 const GradientInput = ({
   id,
   name,
@@ -93,10 +92,10 @@ const GradientInput = ({
       setTimeout(() => {
         setCurrentIndex((prevIndex) => (prevIndex + 1) % placeholders.length);
         setIsVisible(true);
-      }, 300); // Delay for fade-out animation
-    }, duration); // Change placeholder every 3 seconds
+      }, 300);
+    }, duration);
 
-    return () => clearInterval(interval); // Cleanup on unmount
+    return () => clearInterval(interval);
   }, [placeholders, duration]);
 
   const handleFocus = () => setIsInputFocused(true);
@@ -115,11 +114,7 @@ const GradientInput = ({
         placeholder=""
         required={required}
         className={className}
-        style={{
-          "--border-before-color": "rgba(255, 255, 255, 0.2)",
-          "--border-height": "2px",
-          ...style,
-        }}
+        style={style}
       />
       {value === "" && !isInputFocused && (
         <AnimatedPlaceholder $isVisible={isVisible}>

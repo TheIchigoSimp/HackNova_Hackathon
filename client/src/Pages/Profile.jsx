@@ -11,18 +11,7 @@ import { IoMdCloudUpload } from "react-icons/io";
 import { FiAlertCircle } from "react-icons/fi";
 import { FaUserEdit } from "react-icons/fa";
 
-/**
- * Profile page component.
- *
- * This component renders a user's profile page based on the profile data from the server.
- * It displays the user's bio, preferred language, background, interests, learning goals, learning style, current knowledge level, preferred content types, and time commitment.
- * It also allows the user to edit their profile information and update it on the server.
- *
- * @function Profile
- * @returns {JSX.Element} The Profile page component.
- */
 const Profile = () => {
-  // State with additional fields for personalized learning
   const [formData, setFormData] = useState({
     bio: "",
     language: "",
@@ -44,15 +33,15 @@ const Profile = () => {
   const handleRefetch = useCallback(() => {
     refetch();
   }, [refetch]);
-  // Skeleton loader for loading state
+
   const SkeletonLoader = () => (
     <div className="space-y-4 animate-pulse">
       {[...Array(4)].map((_, i) => (
-        <div key={i} className="h-12 " />
+        <div key={i} className="h-12 bg-[rgba(102,126,234,0.1)] rounded-lg" />
       ))}
     </div>
   );
-  // Fetch profile data
+
   const fetchProfile = useCallback(() => {
     if (!session) return;
     setProfileError("");
@@ -84,20 +73,21 @@ const Profile = () => {
     fetchProfile();
   }, [fetchProfile]);
 
-  // Update profile data
   const handleUpdateProfile = useCallback(() => {
     requestHandler(
       () => updateUserProfile(formData),
       setIsUpdating,
       "Updating profile...",
-     null,
+      () => {
+        // Successfully updated - switch back to view mode
+        setIsEditing(false);
+      },
       (err) => {
         setProfileError(err.message || "Failed to update profile");
       }
     );
   }, [formData]);
 
-  // Toggle between edit and view mode
   const handleEditToggle = () => {
     setIsEditing((prev) => !prev);
   };
@@ -105,10 +95,9 @@ const Profile = () => {
   if (isPending) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="shadow-lg p-8 sm:p-12 w-full max-w-md">
-          <p className="text-center text-gray-600 dark:text-gray-300">
-            Loading...
-          </p>
+        <div className="flex items-center space-x-3">
+          <div className="w-6 h-6 border-2 border-[#667eea] border-t-transparent rounded-full animate-spin" />
+          <p className="text-[#94a3b8]">Loading...</p>
         </div>
       </div>
     );
@@ -117,11 +106,9 @@ const Profile = () => {
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="shadow-lg p-8 sm:p-12 w-full max-w-md">
-          <p className="text-center text-red-500">{error.message}</p>
-          <div className="mt-4 text-center">
-            <SlideButton text="Try Again" onClick={handleRefetch} fullWidth />
-          </div>
+        <div className="text-center p-8 rounded-2xl bg-[rgba(25,25,40,0.8)] border border-red-500/20 max-w-md">
+          <p className="text-red-400 mb-4">{error.message}</p>
+          <SlideButton text="Try Again" onClick={handleRefetch} fullWidth />
         </div>
       </div>
     );
@@ -130,17 +117,9 @@ const Profile = () => {
   if (!session) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="shadow-lg p-8 sm:p-12 w-full">
-          <p className="text-center text-gray-600 dark:text-gray-300">
-            No session found. Please log in.
-          </p>
-          <div className="mt-4 text-center">
-            <SlideButton
-              text="Login"
-              onClick={() => navigate("/login")}
-              fullWidth
-            />
-          </div>
+        <div className="text-center p-8 rounded-2xl bg-[rgba(25,25,40,0.8)] border border-[rgba(102,126,234,0.2)] max-w-md">
+          <p className="text-[#94a3b8] mb-4">No session found. Please log in.</p>
+          <SlideButton text="Login" onClick={() => navigate("/login")} fullWidth />
         </div>
       </div>
     );
@@ -149,52 +128,57 @@ const Profile = () => {
   const { user } = session;
 
   return (
-    <div className="min-h-screen flex items-center justify-center ml-5 mr-5">
+    <div className="min-h-screen flex items-center justify-center px-4 py-8">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-screen shadow-xl"
+        className="w-full max-w-6xl"
       >
-        <h2 className="text-3xl font-bold text-white mb-6 text-center">
+        <h2 className="text-3xl font-bold text-white mb-8 text-center">
           Your Profile
         </h2>
 
-        {/**
-         * Grid container:
-         * - “grid-cols-1” on small screens
-         * - “md:grid-cols-3” on ≥768px (avatar + fields occupy remaining 2 columns)
-         * - “lg:grid-cols-4” on ≥1024px (avatar = 1, fields = next 3)
-         */}
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-8">
-          {/* ─── AVATAR COLUMN ─── */}
-          <div className="flex flex-col items-center justify-center">
-            <div className="relative group">
-              <img
-                src={user.image || "https://via.placeholder.com/96"}
-                className="w-24 h-24 rounded-full mb-4 object-cover ring-4 ring-white ring-500/20 transition-all duration-300 group-hover:ring-8"
-                alt="Profile"
-              />
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+          {/* Avatar Column */}
+          <div className="flex flex-col items-center justify-start p-6 rounded-2xl bg-gradient-to-br from-[rgba(25,25,40,0.8)] to-[rgba(15,15,25,0.9)] border border-[rgba(102,126,234,0.15)]">
+            <div className="relative group mb-4">
+              <div className="absolute inset-0 bg-gradient-to-r from-[#667eea] to-[#764ba2] rounded-full blur-lg opacity-30 group-hover:opacity-50 transition-opacity" />
+              {user.image ? (
+                <img
+                  src={user.image}
+                  className="relative w-24 h-24 rounded-full object-cover ring-4 ring-[rgba(102,126,234,0.3)] transition-all duration-300 group-hover:ring-[rgba(102,126,234,0.5)]"
+                  alt="Profile"
+                  referrerPolicy="no-referrer"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    e.target.nextSibling.style.display = 'flex';
+                  }}
+                />
+              ) : null}
+              <div
+                className="relative w-24 h-24 rounded-full bg-gradient-to-br from-[#667eea] to-[#764ba2] ring-4 ring-[rgba(102,126,234,0.3)] flex items-center justify-center text-white text-2xl font-bold"
+                style={{ display: user.image ? 'none' : 'flex' }}
+              >
+                {(user.name || 'U').charAt(0).toUpperCase()}
+              </div>
             </div>
-            <div className="text-center space-y-1">
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+            <div className="text-center">
+              <h3 className="text-xl font-semibold text-white mb-1">
                 {user.name}
               </h3>
-              <p className="text-gray-600 dark:text-gray-400">{user.email}</p>
+              <p className="text-[#94a3b8] text-sm">{user.email}</p>
             </div>
           </div>
 
-          {/**
-           * ─── FIELDS COLUMN (SPANS 2 ON MD, SPANS 3 ON LG) ───
-           * We nest another grid here for the actual “three-­column” arrangement of fields.
-           */}
-          <div className="md:col-span-2 lg:col-span-3">
+          {/* Fields Column */}
+          <div className="md:col-span-3">
             {isProfileLoading ? (
               <SkeletonLoader />
             ) : profileError ? (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="flex items-center p-4 mb-4 text-sm text-red-800 dark:text-red-400 "
+                className="flex items-center p-4 text-sm text-red-400 rounded-lg bg-red-500/10 border border-red-500/20"
                 role="alert"
               >
                 <FiAlertCircle className="flex-shrink-0 mr-3 w-5 h-5" />
@@ -204,258 +188,82 @@ const Profile = () => {
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                /**
-                 * Nested grid for fields:
-                 * - “grid-cols-1” on small/mobile
-                 * - “sm:grid-cols-2” on ≥640px
-                 * - “lg:grid-cols-3” on ≥1024px
-                 */
                 className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
               >
-                {/** ─── BIO ─── */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 mt-6">
-                    Bio
-                  </label>
-                  {isEditing ? (
-                    <textarea
-                      value={formData.bio}
-                      onChange={(e) =>
-                        setFormData({ ...formData, bio: e.target.value })
-                      }
-                      className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white rounded-md transition-all"
-                      placeholder="Tell us about yourself…"
-                      rows={4}
-                      maxLength={500}
-                    />
-                  ) : (
-                    <p className="text-gray-800 dark:text-gray-200 whitespace-pre-wrap border-b-1 px-3 py-2">
-                      {formData.bio || "-- Not Provided --"}
-                    </p>
-                  )}
-                </div>
+                <ProfileField
+                  label="Bio"
+                  value={formData.bio}
+                  isEditing={isEditing}
+                  isTextarea
+                  onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                  placeholder="Tell us about yourself…"
+                />
+                <ProfileField
+                  label="Preferred Language"
+                  value={formData.language}
+                  isEditing={isEditing}
+                  onChange={(e) => setFormData({ ...formData, language: e.target.value })}
+                  placeholders={["Preferred language", "e.g., English, Spanish"]}
+                />
+                <ProfileField
+                  label="Background"
+                  value={formData.background}
+                  isEditing={isEditing}
+                  isTextarea
+                  onChange={(e) => setFormData({ ...formData, background: e.target.value })}
+                  placeholder="Your professional or educational background"
+                />
+                <ProfileField
+                  label="Interests"
+                  value={formData.interests}
+                  isEditing={isEditing}
+                  onChange={(e) => setFormData({ ...formData, interests: e.target.value })}
+                  placeholders={["Your interests", "e.g., machine learning, web dev"]}
+                />
+                <ProfileField
+                  label="Learning Goals"
+                  value={formData.learningGoals}
+                  isEditing={isEditing}
+                  onChange={(e) => setFormData({ ...formData, learningGoals: e.target.value })}
+                  placeholders={["What do you want to achieve?", "e.g., Master React"]}
+                />
+                <ProfileField
+                  label="Learning Style"
+                  value={formData.learningStyle}
+                  isEditing={isEditing}
+                  onChange={(e) => setFormData({ ...formData, learningStyle: e.target.value })}
+                  placeholders={["How do you learn best?", "e.g., Visual, Auditory"]}
+                />
+                <ProfileField
+                  label="Knowledge Level"
+                  value={formData.knowledgeLevel}
+                  isEditing={isEditing}
+                  onChange={(e) => setFormData({ ...formData, knowledgeLevel: e.target.value })}
+                  placeholders={["Your current level", "e.g., Beginner, Intermediate"]}
+                />
+                <ProfileField
+                  label="Content Types"
+                  value={formData.contentTypes}
+                  isEditing={isEditing}
+                  onChange={(e) => setFormData({ ...formData, contentTypes: e.target.value })}
+                  placeholders={["Preferred content", "e.g., Videos, Articles"]}
+                />
+                <ProfileField
+                  label="Time Commitment"
+                  value={formData.timeCommitment}
+                  isEditing={isEditing}
+                  onChange={(e) => setFormData({ ...formData, timeCommitment: e.target.value })}
+                  placeholders={["Available time", "e.g., 5 hours/week"]}
+                />
 
-                {/** ─── PREFERRED LANGUAGE ─── */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 mt-6">
-                    Preferred Language
-                  </label>
-                  {isEditing ? (
-                    <GradientInput
-                      id="language"
-                      value={formData.language}
-                      onChange={(e) =>
-                        setFormData({ ...formData, language: e.target.value })
-                      }
-                      placeholders={[
-                        "Preferred language for content",
-                        "e.g., English, Spanish",
-                      ]}
-                    />
-                  ) : (
-                    <p className="text-gray-800 dark:text-gray-200 border-b-1 px-3 py-2">
-                      {formData.language || "-- Not Provided --"}
-                    </p>
-                  )}
-                </div>
-
-                {/** ─── BACKGROUND ─── */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 mt-6">
-                    Background
-                  </label>
-                  {isEditing ? (
-                    <textarea
-                      value={formData.background}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          background: e.target.value,
-                        })
-                      }
-                      className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white rounded-md transition-all"
-                      placeholder="Describe your professional or educational background"
-                      rows={4}
-                      maxLength={500}
-                    />
-                  ) : (
-                    <p className="text-gray-800 dark:text-gray-200 whitespace-pre-wrap border-b-1 px-3 py-2">
-                      {formData.background || "-- Not Provided --"}
-                    </p>
-                  )}
-                </div>
-
-                {/** ─── INTERESTS ─── */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 mt-6">
-                    Interests
-                  </label>
-                  {isEditing ? (
-                    <GradientInput
-                      id="interests"
-                      value={formData.interests}
-                      onChange={(e) =>
-                        setFormData({ ...formData, interests: e.target.value })
-                      }
-                      placeholders={[
-                        "Enter your interests separated by commas",
-                        "e.g., machine learning, web development",
-                      ]}
-                    />
-                  ) : (
-                    <p className="text-gray-800 dark:text-gray-200 border-b-1 px-3 py-2">
-                      {formData.interests || "-- Not Provided --"}
-                    </p>
-                  )}
-                </div>
-
-                {/** ─── LEARNING GOALS ─── */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 mt-6">
-                    Learning Goals
-                  </label>
-                  {isEditing ? (
-                    <GradientInput
-                      id="learningGoals"
-                      value={formData.learningGoals}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          learningGoals: e.target.value,
-                        })
-                      }
-                      placeholders={[
-                        "What do you want to achieve?",
-                        "e.g., Master React, Learn Data Science",
-                      ]}
-                    />
-                  ) : (
-                    <p className="text-gray-800 dark:text-gray-200 whitespace-pre-wrap border-b-1 px-3 py-2">
-                      {formData.learningGoals || "-- Not Provided --"}
-                    </p>
-                  )}
-                </div>
-
-                {/** ─── LEARNING STYLE ─── */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 mt-6">
-                    Preferred Learning Style
-                  </label>
-                  {isEditing ? (
-                    <GradientInput
-                      id="learningStyle"
-                      value={formData.learningStyle}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          learningStyle: e.target.value,
-                        })
-                      }
-                      placeholders={[
-                        "How do you prefer to learn?",
-                        "e.g., Visual, Auditory, Kinesthetic",
-                      ]}
-                    />
-                  ) : (
-                    <p className="text-gray-200 border-b-1 px-3 py-2">
-                      {formData.learningStyle || "-- Not Provided --"}
-                    </p>
-                  )}
-                </div>
-
-                {/** ─── CURRENT KNOWLEDGE LEVEL ─── */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 mt-6">
-                    Current Knowledge Level
-                  </label>
-                  {isEditing ? (
-                    <GradientInput
-                      id="knowledgeLevel"
-                      value={formData.knowledgeLevel}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          knowledgeLevel: e.target.value,
-                        })
-                      }
-                      placeholders={[
-                        "Your self-assessed level",
-                        "e.g., Beginner, Intermediate, Advanced",
-                      ]}
-                    />
-                  ) : (
-                    <p className="text-gray-200 border-b-1 px-3 py-2">
-                      {formData.knowledgeLevel || "-- Not Provided --"}
-                    </p>
-                  )}
-                </div>
-
-                {/** ─── PREFERRED CONTENT TYPES ─── */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1 mt-6">
-                    Preferred Content Types
-                  </label>
-                  {isEditing ? (
-                    <GradientInput
-                      id="contentTypes"
-                      value={formData.contentTypes}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          contentTypes: e.target.value,
-                        })
-                      }
-                      placeholders={[
-                        "Types of resources you prefer",
-                        "e.g., Videos, Articles, Interactive Tutorials",
-                      ]}
-                    />
-                  ) : (
-                    <p className="text-gray-200 border-b-1 px-3 py-2">
-                      {formData.contentTypes || "-- Not Provided --"}
-                    </p>
-                  )}
-                </div>
-
-                {/** ─── TIME COMMITMENT ─── */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1 mt-6">
-                    Time Commitment
-                  </label>
-                  {isEditing ? (
-                    <GradientInput
-                      id="timeCommitment"
-                      value={formData.timeCommitment}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          timeCommitment: e.target.value,
-                        })
-                      }
-                      placeholders={[
-                        "How much time can you dedicate?",
-                        "e.g., 1 hour/week, 5 hours/week",
-                      ]}
-                    />
-                  ) : (
-                    <p className="text-gray-200 border-b-1 px-3 py-2">
-                      {formData.timeCommitment || "-- Not Provided --"}
-                    </p>
-                  )}
-                </div>
-
-                {/**
-                 * ─── EDIT / SAVE BUTTON SPANNING ALL THREE FIELD COLUMNS ───
-                 * On large screens, this will span all 3 columns; on smaller screens, it spans full width of its row.
-                 */}
-                <div className="lg:col-span-3 mt-4 text-center">
+                <div className="lg:col-span-3 mt-6 flex justify-center">
                   <SlideButton
                     text={isEditing ? "Save Changes" : "Edit Profile"}
                     icon={isEditing ? <IoMdCloudUpload /> : <FaUserEdit />}
                     onClick={isEditing ? handleUpdateProfile : handleEditToggle}
                     disabled={isUpdating}
                     isLoading={isUpdating}
-                    fullWidth
+                    style={{ width: "280px", maxWidth: "100%" }}
                   />
                 </div>
               </motion.div>
@@ -466,5 +274,35 @@ const Profile = () => {
     </div>
   );
 };
+
+const ProfileField = ({ label, value, isEditing, isTextarea, onChange, placeholder, placeholders }) => (
+  <div>
+    <label className="block text-sm font-medium text-[#94a3b8] mb-2">
+      {label}
+    </label>
+    {isEditing ? (
+      isTextarea ? (
+        <textarea
+          value={value}
+          onChange={onChange}
+          className="w-full px-4 py-3 bg-[rgba(25,25,40,0.6)] border border-[rgba(102,126,234,0.2)] rounded-lg text-white placeholder-[#64748b] focus:outline-none focus:border-[rgba(102,126,234,0.5)] focus:ring-2 focus:ring-[rgba(102,126,234,0.15)] transition-all resize-none"
+          placeholder={placeholder}
+          rows={3}
+          maxLength={500}
+        />
+      ) : (
+        <GradientInput
+          value={value}
+          onChange={onChange}
+          placeholders={placeholders || [placeholder]}
+        />
+      )
+    ) : (
+      <p className="text-[#e2e8f0] px-4 py-3 bg-[rgba(25,25,40,0.4)] border border-[rgba(102,126,234,0.1)] rounded-lg min-h-[48px] whitespace-pre-wrap">
+        {value || <span className="text-[#64748b]">-- Not Provided --</span>}
+      </p>
+    )}
+  </div>
+);
 
 export default React.memo(Profile);

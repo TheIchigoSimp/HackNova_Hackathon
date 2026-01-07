@@ -8,58 +8,58 @@ import AuthForm from "../components/AuthComponents/AuthForm";
 import SlideButton from "../components/Buttons/SlideButton";
 import { FaUserPlus } from "react-icons/fa";
 
-/**
- * A page for logging in to the app.
- *
- * This page renders a {@link TrueFocus} heading, a {@link SocialSignInButtons} component for logging in with
- * Google or GitHub, an {@link AuthForm} component for logging in with an email and password, and a link to the
- * register page.
- *
- * @returns {JSX.Element} The Login page component.
- */
 const Login = () => {
   const navigate = useNavigate();
   const [socialError, setSocialError] = useState("");
 
   return (
     <PageLayout>
-      {/* Page Heading */}
-      <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-10 text-center">
-        <TrueFocus
-          sentence="Login Here"
-          blurAmount={6}
-          borderColor="orange"
-          glowColor="red"
-          animationDuration={0.5}
-        />
-      </h2>
+      <div className="max-w-md mx-auto">
+        {/* Page Heading */}
+        <h2 className="text-3xl font-bold text-white mb-10 text-center">
+          <TrueFocus
+            sentence="Login Here"
+            blurAmount={6}
+            borderColor="#667eea"
+            glowColor="rgba(102, 126, 234, 0.6)"
+            animationDuration={0.5}
+          />
+        </h2>
 
-      {/* Social Sign-In Buttons */}
-      <SocialSignInButtons setError={setSocialError} />
-      {socialError && (
-        <div className="text-red-500 text-sm text-center mb-4">
-          {socialError}
+        {/* Social Sign-In Buttons */}
+        <SocialSignInButtons setError={setSocialError} />
+        {socialError && (
+          <div className="text-red-400 text-sm text-center mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+            {socialError}
+          </div>
+        )}
+
+        {/* Divider */}
+        <div className="flex items-center my-8">
+          <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[rgba(102,126,234,0.3)] to-transparent" />
+          <span className="px-4 text-[#94a3b8] text-sm">or continue with email</span>
+          <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[rgba(102,126,234,0.3)] to-transparent" />
         </div>
-      )}
 
-      {/* Email/Password Login Form */}
-      <div className="flex justify-center mb-6">
-        <div className="w-full max-w-md">
-          <AuthForm isLogin />
+        {/* Email/Password Login Form */}
+        <div className="flex justify-center mb-8">
+          <div className="w-full">
+            <AuthForm isLogin />
+          </div>
         </div>
-      </div>
 
-      {/* Register Link */}
-      <div className="mt-2 text-center text-sm text-gray-700 dark:text-gray-300">
-        Don’t have an account?
-        <div className="mt-2 flex justify-center">
-          <div className="w-7/12 max-w-xs">
-            <SlideButton
-              text="Register"
-              icon={<FaUserPlus />}
-              onClick={() => navigate("/register")}
-              fullWidth={true}
-            />
+        {/* Register Link */}
+        <div className="text-center text-sm text-[#94a3b8]">
+          Don't have an account?
+          <div className="mt-4 flex justify-center">
+            <div className="w-48">
+              <SlideButton
+                text="Register"
+                icon={<FaUserPlus />}
+                onClick={() => navigate("/register")}
+                fullWidth={true}
+              />
+            </div>
           </div>
         </div>
       </div>

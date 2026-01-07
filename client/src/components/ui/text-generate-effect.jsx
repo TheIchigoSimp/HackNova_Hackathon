@@ -17,7 +17,7 @@ export const TextGenerateEffect = ({
       filter: filter ? "blur(0px)" : "none",
     }, {
       duration: duration ? duration : 1,
-      delay: stagger(0.2),
+      delay: stagger(0.15),
     });
   }, [scope.current]);
 
@@ -28,7 +28,7 @@ export const TextGenerateEffect = ({
           return (
             <motion.span
               key={word + idx}
-              className={`${idx > 3 ? 'text-orange-300' : 'dark:text-white text-black'} opacity-0`}
+              className={`${idx > 3 ? 'bg-gradient-to-r from-[#667eea] via-[#764ba2] to-[#f093fb] bg-clip-text text-transparent' : 'text-white'} opacity-0`}
               style={{
                 filter: filter ? "blur(10px)" : "none",
               }}>
@@ -44,7 +44,7 @@ export const TextGenerateEffect = ({
     <div className={cn("font-bold", className)}>
       <div className="my-4">
         <div
-          className="text-[50px] md:text-5xl lg:text-6xl dark:text-white text-black leading-snug tracking-wide">
+          className="text-[42px] md:text-5xl lg:text-6xl text-white leading-tight tracking-tight">
           {renderWords()}
         </div>
       </div>

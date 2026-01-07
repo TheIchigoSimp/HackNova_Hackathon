@@ -1,102 +1,127 @@
 import React from 'react';
 import styled, { keyframes } from 'styled-components';
 
-
-
-const shineSweep = keyframes`
-  0% { transform: translate(-30%, -30%) rotate(0deg); }
-  100% { transform: translate(-30%, -30%) rotate(360deg); }
+const shimmer = keyframes`
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 `;
 
-// Styled components
+const float = keyframes`
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+`;
+
 const Container = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 20px;
-  font-family: 'Orbitron', 'Rajdhani', sans-serif;
+  padding: 16px;
   position: relative;
 `;
 
-
-
-const BatteryCard = styled.div`
+const Card = styled.div`
   position: relative;
   width: ${({ width }) => width || '280px'};
-  padding: ${({ padding }) => padding || '30px'};
-    height: ${({ height }) => height || '350px'};
-  background: transparent;
-  border: 1px solid rgba(80, 100, 200, 0.2);
-  box-shadow:
-    0 15px 30px rgba(0, 0, 0, 0.6),
-    inset 0 0 10px rgba(80, 100, 200, 0.15);
-   
+  max-width: ${({ maxWidth }) => maxWidth || 'none'};
+  padding: ${({ padding }) => padding || '28px'};
+  height: ${({ height }) => height || 'auto'};
+  background: linear-gradient(135deg, rgba(25, 25, 40, 0.9) 0%, rgba(15, 15, 25, 0.95) 100%);
+  border: 1px solid rgba(102, 126, 234, 0.15);
+  border-radius: 16px;
   overflow: hidden;
   z-index: 1;
-  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(20px);
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.5), transparent);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      135deg,
+      transparent 0%,
+      rgba(102, 126, 234, 0.03) 50%,
+      transparent 100%
+    );
+    pointer-events: none;
+  }
 
   &:hover {
-    transform: translateY(-5px);
-    box-shadow:
-      0 20px 40px rgba(0, 0, 0, 0.8),
-      inset 0 0 15px rgba(80, 100, 200, 0.25);
-    filter: brightness(0.5);
-    .diagonal {
-      opacity: 0.8;
-    }
-    .glow {
-      opacity: 0.5;
+    transform: translateY(-8px);
+    border-color: rgba(102, 126, 234, 0.3);
+    box-shadow: 
+      0 25px 50px -12px rgba(0, 0, 0, 0.5),
+      0 0 40px rgba(102, 126, 234, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+
+    &::before {
+      opacity: 1;
     }
   }
 `;
 
-const HolographicOverlay = styled.div`
+const GlowEffect = styled.div`
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: 
-    linear-gradient(135deg, rgba(80,100,200,0.05) 0%, transparent 50%, rgba(80,100,200,0.05) 100%),
-    repeating-linear-gradient(45deg, rgba(80,100,200,0.03) 0px, rgba(80,100,200,0.03) 1px, transparent 1px, transparent 4px);
-  z-index: -1;
-`;
-
-const DiagonalShine = styled.div`
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 300%;
-  background: linear-gradient(45deg, transparent 45%, rgba(100,150,255,0.2) 50%, transparent 55%);
-  z-index: -1;
-  animation: ${shineSweep} 6s infinite linear;
+  width: 150%;
+  height: 150%;
+  top: -25%;
+  left: -25%;
+  background: radial-gradient(
+    circle at center,
+    rgba(102, 126, 234, 0.1) 0%,
+    transparent 50%
+  );
   opacity: 0;
   transition: opacity 0.5s ease;
+  pointer-events: none;
+  z-index: -1;
+
+  ${Card}:hover & {
+    opacity: 1;
+  }
 `;
 
-const CyberGlow = styled.div`
+const ShimmerBorder = styled.div`
   position: absolute;
-  width: 100%;
-  height: 100%;
-  border-radius: 16px;
-  background: radial-gradient(circle at center, rgba(80,100,200,0.15) 0%, transparent 70%);
-  box-shadow: 0 0 30px rgba(80,100,200,0.3);
+  inset: -1px;
+  border-radius: 17px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(102, 126, 234, 0.4),
+    rgba(118, 75, 162, 0.4),
+    transparent
+  );
+  background-size: 200% 100%;
   opacity: 0;
-  transition: opacity 0.5s ease;
-  z-index: -2;
+  transition: opacity 0.3s ease;
+  z-index: -1;
+
+  ${Card}:hover & {
+    opacity: 1;
+    animation: ${shimmer} 2s linear infinite;
+  }
 `;
 
-// Main component
-const GlowCard = ({ width, height, children  }) => (
-  <Container>
-   
-    <BatteryCard width={width} height={height}>
-      <HolographicOverlay />
-      <DiagonalShine className="diagonal" />
-      <CyberGlow className="glow" />
-        {children}
-    </BatteryCard>
+const GlowCard = ({ width, height, maxWidth, padding, children, className }) => (
+  <Container className={className}>
+    <Card width={width} height={height} maxWidth={maxWidth} padding={padding}>
+      <ShimmerBorder />
+      <GlowEffect />
+      {children}
+    </Card>
   </Container>
 );
 

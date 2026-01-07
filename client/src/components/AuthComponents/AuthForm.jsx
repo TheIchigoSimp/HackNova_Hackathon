@@ -5,27 +5,7 @@ import { userLogin, userRegister } from "../../api/authApi.js";
 import { FaUserPlus } from "react-icons/fa";
 import { GrLogin } from "react-icons/gr";
 
-/**
- * AuthForm
- *
- * A form for logging in or registering a user.
- *
- * @param {{ isLogin: boolean }} props
- * @prop {boolean} isLogin Whether the form is for logging in or registering.
- * @returns {JSX.Element} The AuthForm component.
- */
 const AuthForm = ({ isLogin = false }) => {
-  /**
-   * formData
-   *
-   * The form data object.
-   *
-   * @type {Object}
-   * @property {string} email The user's email address.
-   * @property {string} username The user's username.
-   * @property {string} password The user's password.
-   * @property {string} confirmPassword The user's confirmed password.
-   */
   const [formData, setFormData] = useState({
     email: "",
     username: "",
@@ -33,18 +13,6 @@ const AuthForm = ({ isLogin = false }) => {
     confirmPassword: "",
   });
 
-  /**
-   * errors
-   *
-   * The error messages object.
-   *
-   * @type {Object}
-   * @property {string} email The error message for the email field.
-   * @property {string} username The error message for the username field.
-   * @property {string} password The error message for the password field.
-   * @property {string} passwordMatch The error message for the password match field.
-   * @property {string} general The general error message.
-   */
   const [errors, setErrors] = useState({
     email: "",
     username: "",
@@ -53,22 +21,8 @@ const AuthForm = ({ isLogin = false }) => {
     general: "",
   });
 
-  /**
-   * isSubmitting
-   *
-   * Whether the form is currently submitting.
-   *
-   * @type {boolean}
-   */
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  /**
-   * handleChange
-   *
-   * Handles changes to the form data.
-   *
-   * @param {React.ChangeEvent<HTMLInputElement>} e The change event.
-   */
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -82,13 +36,6 @@ const AuthForm = ({ isLogin = false }) => {
     }));
   };
 
-  /**
-   * validateForm
-   *
-   * Validates the form data.
-   *
-   * @returns {boolean} Whether the form data is valid.
-   */
   const validateForm = () => {
     let newErrors = {};
     if (!formData.email) newErrors.email = "Email is required";
@@ -104,13 +51,6 @@ const AuthForm = ({ isLogin = false }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  /**
-   * handleSubmit
-   *
-   * Handles form submission.
-   *
-   * @param {React.FormEvent<HTMLFormElement>} e The form event.
-   */
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
@@ -119,7 +59,6 @@ const AuthForm = ({ isLogin = false }) => {
     try {
       const authAction = isLogin ? userLogin : userRegister;
       await authAction(formData, setErrors);
-      // Handle successful login/registration (e.g., navigate to dashboard)
       console.log(`${isLogin ? "Login" : "Registration"} successful`);
     } catch (error) {
       console.error(`${isLogin ? "Login" : "Registration"} error:`, error);
@@ -133,7 +72,7 @@ const AuthForm = ({ isLogin = false }) => {
   };
 
   return (
-    <div className="space-y-6 max-w-md mx-auto p-3 rounded-lg shadow-md">
+    <div className="space-y-6 max-w-md mx-auto p-6 rounded-2xl bg-gradient-to-br from-[rgba(25,25,40,0.6)] to-[rgba(15,15,25,0.8)] backdrop-blur-xl border border-[rgba(102,126,234,0.1)]">
       {isLogin ? (
         <>
           <InputField
@@ -218,10 +157,12 @@ const AuthForm = ({ isLogin = false }) => {
       )}
 
       {errors.general && (
-        <div className="text-red-500 text-sm text-center">{errors.general}</div>
+        <div className="text-red-400 text-sm text-center p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+          {errors.general}
+        </div>
       )}
 
-      <div className="text-center border-b-2 pb-3">
+      <div className="pt-4 flex justify-center">
         <SlideButton
           type="button"
           text={isLogin ? "Login" : "Register"}
@@ -229,20 +170,13 @@ const AuthForm = ({ isLogin = false }) => {
           fullWidth={true}
           disabled={isSubmitting}
           onClick={handleSubmit}
+          style={{ maxWidth: "200px" }}
         />
       </div>
     </div>
   );
 };
 
-/**
- * InputField
- *
- * A single input field component.
- *
- * @param {{ label: string, id: string, name: string, type: string, value: string, onChange: Function, placeholder: string, required: boolean, error: string, fullWidth: boolean }} props
- * @returns {JSX.Element} The InputField component.
- */
 const InputField = ({
   label,
   id,
@@ -262,10 +196,10 @@ const InputField = ({
   >
     <label
       htmlFor={id}
-      className="block text-sm font-medium text-gray-700 dark:text-white"
+      className="block text-sm font-medium text-[#e2e8f0] mb-2"
     >
       {label}
-      {required && <span className="text-red-500">*</span>}
+      {required && <span className="text-[#f472b6] ml-1">*</span>}
     </label>
     <GradientInput
       id={id}
@@ -274,11 +208,16 @@ const InputField = ({
       value={value}
       onChange={onChange}
       placeholders={[`${placeholder}`]}
-      className="w-full mt-1"
+      className="w-full"
       required={required}
       duration={10000}
     />
-    {error && <div className="text-red-500 text-xs mt-1">{error}</div>}
+    {error && (
+      <div className="text-red-400 text-xs mt-2 flex items-center">
+        <span className="w-1 h-1 bg-red-400 rounded-full mr-2" />
+        {error}
+      </div>
+    )}
   </div>
 );
 
