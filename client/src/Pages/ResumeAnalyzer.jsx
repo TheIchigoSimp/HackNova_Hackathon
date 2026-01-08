@@ -1,7 +1,7 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import styled from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiUploadCloud, FiFile, FiX, FiCheckCircle, FiAlertCircle } from 'react-icons/fi';
+import { FiUploadCloud, FiFile, FiX, FiCheckCircle, FiAlertCircle, FiRefreshCw } from 'react-icons/fi';
 import { HiDocumentText } from 'react-icons/hi';
 
 import ATSScoreCard from '../components/ResumeAgent/ATSScoreCard';
@@ -10,6 +10,12 @@ import ResumeChat from '../components/ResumeAgent/ResumeChat';
 import SlideButton from '../components/Buttons/SlideButton';
 
 import { uploadResume, chatWithAgent } from '../api/resumeAgentApi';
+import { 
+    getResumeSession, 
+    saveResumeSession, 
+    addChatMessage as persistChatMessage, 
+    clearResumeSession 
+} from '../api/resumeSessionApi';
 import { useNavbarVisibility } from '../hooks/useNavbarVisibility';
 
 const PageContainer = styled.div`
@@ -217,7 +223,16 @@ const LoadingText = styled.p`
   font-size: 1rem;
 `;
 
-const SuccessMessage = styled(motion.div)`
+const SuccessHeader = styled(motion.div)`
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+`;
+
+const SuccessMessage = styled.div`
   display: flex;
   align-items: center;
   gap: 12px;
@@ -227,7 +242,31 @@ const SuccessMessage = styled(motion.div)`
   border-radius: 12px;
   color: #34d399;
   font-size: 0.875rem;
-  margin-bottom: 24px;
+`;
+
+const NewResumeButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: rgba(102, 126, 234, 0.1);
+  border: 1px solid rgba(102, 126, 234, 0.2);
+  border-radius: 12px;
+  color: #a78bfa;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: rgba(102, 126, 234, 0.2);
+    border-color: rgba(102, 126, 234, 0.4);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 `;
 
 const ResumeAnalyzer = () => {
@@ -235,11 +274,42 @@ const ResumeAnalyzer = () => {
     const [isDragOver, setIsDragOver] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const [isChatLoading, setIsChatLoading] = useState(false);
+    const [isRestoringSession, setIsRestoringSession] = useState(true);
     const [error, setError] = useState(null);
     const [analysisResult, setAnalysisResult] = useState(null);
     const [threadId, setThreadId] = useState(null);
+    const [chatMessages, setChatMessages] = useState([]);
+    const [filename, setFilename] = useState('');
     const fileInputRef = useRef(null);
     const isNavbarVisible = useNavbarVisibility(600, 43);
+
+    // Restore session from MongoDB on mount
+    useEffect(() => {
+        const restoreSession = async () => {
+            try {
+                const session = await getResumeSession();
+                if (session) {
+                    setThreadId(session.threadId);
+                    setFilename(session.filename || '');
+                    setAnalysisResult({
+                        ats_score: session.analysisResult?.ats_score || 0,
+                        ats_breakdown: session.analysisResult?.ats_breakdown || {},
+                        skills_found: session.analysisResult?.skills_found || [],
+                        action_verbs_found: session.analysisResult?.action_verbs_found || [],
+                        suggestions: session.analysisResult?.suggestions || [],
+                    });
+                    setChatMessages(session.chatMessages || []);
+                }
+            } catch (err) {
+                console.error('Failed to restore session:', err);
+                // Silently fail - user can just upload a new resume
+            } finally {
+                setIsRestoringSession(false);
+            }
+        };
+
+        restoreSession();
+    }, []);
 
     const handleDragOver = useCallback((e) => {
         e.preventDefault();
@@ -297,6 +367,21 @@ const ResumeAnalyzer = () => {
             const result = await uploadResume(file);
             setAnalysisResult(result);
             setThreadId(result.thread_id);
+            setFilename(file.name);
+            setChatMessages([]); // Reset chat for new resume
+
+            // Save session to MongoDB
+            await saveResumeSession({
+                threadId: result.thread_id,
+                filename: file.name,
+                analysisResult: {
+                    ats_score: result.ats_score,
+                    ats_breakdown: result.ats_breakdown,
+                    skills_found: result.skills_found,
+                    action_verbs_found: result.action_verbs_found,
+                    suggestions: result.suggestions,
+                },
+            });
         } catch (err) {
             console.error('Upload error:', err);
             setError(err.response?.data?.detail || 'Failed to analyze resume. Please try again.');
@@ -310,7 +395,14 @@ const ResumeAnalyzer = () => {
 
         setIsChatLoading(true);
         try {
+            // Persist user message to MongoDB
+            await persistChatMessage('user', message);
+            
             const response = await chatWithAgent(threadId, message);
+            
+            // Persist assistant response to MongoDB
+            await persistChatMessage('assistant', response.response);
+            
             return response.response;
         } catch (err) {
             console.error('Chat error:', err);
@@ -319,6 +411,42 @@ const ResumeAnalyzer = () => {
             setIsChatLoading(false);
         }
     }, [threadId]);
+
+    const handleUploadDifferentResume = useCallback(async () => {
+        try {
+            await clearResumeSession();
+        } catch (err) {
+            console.error('Failed to clear session:', err);
+        }
+        
+        // Reset all state
+        setFile(null);
+        setAnalysisResult(null);
+        setThreadId(null);
+        setChatMessages([]);
+        setFilename('');
+        setError(null);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    }, []);
+
+    // Show loading state while restoring session
+    if (isRestoringSession) {
+        return (
+            <PageContainer>
+                <ContentArea style={{ paddingTop: isNavbarVisible ? '64px' : '0' }}>
+                    <Header>
+                        <Title>Resume Analyzer</Title>
+                        <Subtitle>Loading your session...</Subtitle>
+                    </Header>
+                    <div className="flex justify-center">
+                        <div className="w-8 h-8 border-2 border-[#667eea] border-t-transparent rounded-full animate-spin" />
+                    </div>
+                </ContentArea>
+            </PageContainer>
+        );
+    }
 
     return (
         <PageContainer>
@@ -413,10 +541,16 @@ const ResumeAnalyzer = () => {
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.5 }}
                         >
-                            <SuccessMessage>
-                                <FiCheckCircle size={20} />
-                                Resume analyzed successfully! Here are your results.
-                            </SuccessMessage>
+                            <SuccessHeader>
+                                <SuccessMessage>
+                                    <FiCheckCircle size={20} />
+                                    {filename ? `Analyzing: ${filename}` : 'Resume analyzed successfully!'}
+                                </SuccessMessage>
+                                <NewResumeButton onClick={handleUploadDifferentResume}>
+                                    <FiRefreshCw size={16} />
+                                    Upload Different Resume
+                                </NewResumeButton>
+                            </SuccessHeader>
 
                             <ResultsGrid>
                                 {/* ATS Score Card */}
@@ -437,6 +571,7 @@ const ResumeAnalyzer = () => {
                                     threadId={threadId}
                                     onSendMessage={handleSendMessage}
                                     isLoading={isChatLoading}
+                                    initialMessages={chatMessages}
                                 />
                             </ResultsGrid>
                         </ResultsSection>

@@ -3,3 +3,6 @@
 rules
 venv
 __pycache__
+resume_agent.db
+resume_agent.db-shm
+resume_agent.db-wal
