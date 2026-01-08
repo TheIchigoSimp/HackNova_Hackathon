@@ -7,6 +7,7 @@ export const activeLinkClasses = "text-white";
 export const navLinks = [
   { to: "/dashboard", label: "Dashboard" },
   { to: "/profile", label: "Profile" },
+  { to: "/certifications", label: "Certifications" },
 ];
 
 // If you ever want more links (e.g. /settings, /about), just append to this array.

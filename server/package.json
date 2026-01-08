@@ -32,7 +32,7 @@
     "cors": "^2.8.5",
     "depcheck": "^1.4.7",
     "docx": "^9.5.0",
-    "dotenv": "^16.4.5",
+    "dotenv": "^16.6.1",
     "express": "^4.19.2",
     "groq-sdk": "^0.37.0",
     "jsonwebtoken": "^9.0.2",
@@ -50,6 +50,7 @@
     "puppeteer": "^24.9.0",
     "remark-parse": "^11.0.0",
     "resend": "^4.5.1",
+    "start": "^5.1.0",
     "svg-to-pdfkit": "^0.1.8",
     "unified": "^11.0.5",
     "winston": "^3.13.0"

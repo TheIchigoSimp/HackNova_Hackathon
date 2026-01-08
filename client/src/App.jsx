@@ -16,6 +16,7 @@ const Register = lazy(() => import("./Pages/Register.jsx"));
 const Dashboard = lazy(() => import("./Pages/Dashboard.jsx"));
 const Profile = lazy(() => import("./Pages/Profile.jsx"));
 const MindMapPage = lazy(() => import("./Pages/MindMapPage.jsx"));
+const CertificationPage = lazy(() => import("./Pages/CertificationPage.jsx"));
 
 // ------------------------
 // Route Guards
@@ -144,6 +145,14 @@ export default function App() {
               element={
                 <PrivateRoute>
                   <MindMapPage />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/certifications"
+              element={
+                <PrivateRoute>
+                  <CertificationPage />
                 </PrivateRoute>
               }
             />
