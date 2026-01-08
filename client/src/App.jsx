@@ -156,14 +156,11 @@ export default function App() {
                   <CertificationPage />
                 </PrivateRoute>
               }
-         />
-          <Route path="/resume-analyzer"
+            />
+            <Route path="/resume-analyzer"
               element={
                 <PrivateRoute>
                   <ResumeAnalyzer />
-                </PrivateRoute>
-              }
-          />
                 </PrivateRoute>
               }
             />

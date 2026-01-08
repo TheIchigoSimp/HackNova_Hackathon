@@ -30,10 +30,10 @@ const CertificationPage = () => {
     };
 
     return (
-        <div className="min-h-screen pt-24 pb-10 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-             <div className="text-center mb-10 md:mb-16">
-                <h1 className="text-3xl md:text-5xl font-bold text-white mb-4 leading-tight tracking-tight">
-                    <span className="bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 bg-clip-text text-transparent drop-shadow-lg">
+        <div className="min-h-screen pt-26 pb-10 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+            <div className="text-center mb-10 md:mb-16">
+                <h1 className="text-xl md:text-4xl font-bold text-white mb-4 leading-tight tracking-tight">
+                    <span className="bg-white bg-clip-text text-transparent drop-shadow-lg">
                         AI Certification Engine
                     </span>
                 </h1>
@@ -57,7 +57,7 @@ const CertificationPage = () => {
                             required
                         />
                     </div>
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label className="block text-slate-300 mb-2 font-medium text-sm md:text-base tracking-wide">Experience Level</label>
@@ -76,7 +76,7 @@ const CertificationPage = () => {
                                 </div>
                             </div>
                         </div>
-                         <div>
+                        <div>
                             <label className="block text-slate-300 mb-2 font-medium text-sm md:text-base tracking-wide">Existing Skills (Optional)</label>
                             <input
                                 type="text"
@@ -88,14 +88,14 @@ const CertificationPage = () => {
                         </div>
                     </div>
 
-                    <div className="flex justify-center pt-4">
+                    <div className="flex justify-center pt-5">
                         <SlideButton
                             text={loading ? "Analyzing..." : "Discover Certifications"}
-                            icon={loading ? <FaSpinner className="animate-spin" /> : <MdExplore />}
+                            icon={loading ? <FaSpinner className="animate-spin" /> : null}
                             disabled={loading}
                             fullWidth={false}
-                            onClick={handleSubmit} 
-                            style={{width: '100%', maxWidth: '300px', height: '54px'}}
+                            onClick={handleSubmit}
+                            style={{ minWidth: '240px', height: '50px' }}
                         />
                     </div>
                 </form>
@@ -104,22 +104,22 @@ const CertificationPage = () => {
             {/* Results Section */}
             {results && results.recommendations && (
                 <div className="space-y-24 pb-20">
-                     <Section 
-                        title="Globally Recognized" 
+                    <Section
+                        title="Globally Recognized"
                         subtitle="Gold Standard Verification"
                         icon={<FaGlobe className="text-amber-500" />}
                         data={results.recommendations.globally_recognized_paid}
                         theme="gold"
                     />
-                     <Section 
-                        title="Free & Open Source" 
+                    <Section
+                        title="Free & Open Source"
                         subtitle="High Value, Zero Cost"
                         icon={<FaCertificate className="text-cyan-400" />}
                         data={results.recommendations.free_certifications}
                         theme="cyan"
                     />
-                     <Section 
-                        title="Professional Growth" 
+                    <Section
+                        title="Professional Growth"
                         subtitle="Skill Specialization"
                         icon={<FaGraduationCap className="text-fuchsia-400" />}
                         data={results.recommendations.normal_certifications}
@@ -178,12 +178,12 @@ const Section = ({ title, subtitle, icon, data, theme }) => {
                     <p className={`text-sm font-medium uppercase tracking-widest ${t.subtitle}`}>{subtitle}</p>
                 </div>
             </div>
-            
+
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
                 {data.map((cert, index) => (
                     <div key={index} className={`flex flex-col p-1 rounded-2xl bg-gradient-to-b from-white/10 to-transparent p-[1px] group transition-transform duration-300 hover:-translate-y-2`}>
                         <div className={`flex flex-col h-full p-6 rounded-2xl ${t.cardBg} backdrop-blur-md border ${t.border} ${t.hoverBorder} transition-colors duration-300 relative overflow-hidden`}>
-                            
+
                             {/* Top glow */}
                             <div className={`absolute -top-10 -right-10 w-32 h-32 bg-white/5 blur-3xl rounded-full transition-opacity duration-500 group-hover:opacity-100 opacity-50 pointer-events-none`}></div>
 
@@ -193,12 +193,12 @@ const Section = ({ title, subtitle, icon, data, theme }) => {
                                 </span>
                                 <span className="text-xs text-slate-400 bg-black/20 px-2.5 py-1 rounded-lg font-medium border border-white/5">{cert.mode}</span>
                             </div>
-                            
+
                             <h3 className={`text-xl font-bold text-white mb-3 leading-snug min-h-[3.5rem] tracking-tight`}>
                                 {cert.name}
                             </h3>
                             <p className="text-slate-400 text-sm mb-6 font-medium tracking-wide">{cert.organization}</p>
-                            
+
                             <div className="mt-auto space-y-4 relative z-10">
                                 <div className="bg-black/20 p-4 rounded-xl border border-white/5 space-y-3">
                                     <div className="flex justify-between items-center text-sm">
@@ -211,9 +211,9 @@ const Section = ({ title, subtitle, icon, data, theme }) => {
                                     </div>
                                 </div>
 
-                                <a 
-                                    href={cert.link} 
-                                    target="_blank" 
+                                <a
+                                    href={cert.link}
+                                    target="_blank"
                                     rel="noopener noreferrer"
                                     className={`block w-full text-center py-3.5 rounded-xl font-bold text-sm tracking-wide transition-all active:scale-95 ${t.button}`}
                                 >

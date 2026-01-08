@@ -16,7 +16,6 @@ const BaseButton = styled.button`
   font-size: 1rem;
   font-family: inherit;
   width: ${(props) => (props.$fullWidth ? "100%" : "auto")};
-  max-width: 14rem;
   height: auto;
   line-height: 1;
 
@@ -111,7 +110,7 @@ const IconWrapper = styled.span`
   transition: transform 0.5s cubic-bezier(0.65, 0, 0.076, 1);
 
   ${BaseButton}:hover & {
-    transform: translateX(calc(100% - 4.2rem));
+    transform: translateX(calc(100% - 4.8rem));
   }
 `;
 
