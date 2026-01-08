@@ -11,7 +11,7 @@ import { showErrorToast } from "../../utils/toastUtils";
 
 import { useSession } from "../lib/auth-client";
 import { useNavbarVisibility } from "../hooks/useNavbarVisibility";
-import pathgenieLogo from "../../public/pathgenie.png";
+import pathgenieLogo from "../../public/logo2.png";
 import {
   createMindmap,
   getAllMindmaps,
