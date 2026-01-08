@@ -16,6 +16,7 @@ const Register = lazy(() => import("./Pages/Register.jsx"));
 const Dashboard = lazy(() => import("./Pages/Dashboard.jsx"));
 const Profile = lazy(() => import("./Pages/Profile.jsx"));
 const MindMapPage = lazy(() => import("./Pages/MindMapPage.jsx"));
+const CertificationPage = lazy(() => import("./Pages/CertificationPage.jsx"));
 const ResumeAnalyzer = lazy(() => import("./Pages/ResumeAnalyzer.jsx"));
 
 // ------------------------
@@ -149,10 +150,20 @@ export default function App() {
               }
             />
             <Route
-              path="/resume-analyzer"
+              path="/certifications"
+              element={
+                <PrivateRoute>
+                  <CertificationPage />
+                </PrivateRoute>
+              }
+         />
+          <Route path="/resume-analyzer"
               element={
                 <PrivateRoute>
                   <ResumeAnalyzer />
+                </PrivateRoute>
+              }
+          />
                 </PrivateRoute>
               }
             />
