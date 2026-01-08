@@ -9,7 +9,7 @@ import SuggestionsPanel from '../components/ResumeAgent/SuggestionsPanel';
 import ResumeChat from '../components/ResumeAgent/ResumeChat';
 import SlideButton from '../components/Buttons/SlideButton';
 
-import { uploadResume, chatWithAgent } from '../api/resumeAgentApi';
+import { uploadResume, streamChatWithAgent, chatWithAgent } from '../api/resumeAgentApi';
 import { 
     getResumeSession, 
     saveResumeSession, 
@@ -390,7 +390,7 @@ const ResumeAnalyzer = () => {
         }
     }, [file]);
 
-    const handleSendMessage = useCallback(async (message) => {
+    const handleSendMessage = useCallback(async (message, onStreamToken = null) => {
         if (!threadId) return;
 
         setIsChatLoading(true);
@@ -398,12 +398,34 @@ const ResumeAnalyzer = () => {
             // Persist user message to MongoDB
             await persistChatMessage('user', message);
             
-            const response = await chatWithAgent(threadId, message);
+            let finalResponse = '';
+            
+            // If streaming callback provided, use streaming API
+            if (onStreamToken) {
+                finalResponse = await streamChatWithAgent(
+                    threadId,
+                    message,
+                    (token, fullText) => {
+                        onStreamToken(token, fullText);
+                    },
+                    (status) => {
+                        console.log('Tool status:', status);
+                    },
+                    null,
+                    (error) => {
+                        console.error('Stream error:', error);
+                    }
+                );
+            } else {
+                // Fallback to non-streaming
+                const response = await chatWithAgent(threadId, message);
+                finalResponse = response.response;
+            }
             
             // Persist assistant response to MongoDB
-            await persistChatMessage('assistant', response.response);
+            await persistChatMessage('assistant', finalResponse);
             
-            return response.response;
+            return finalResponse;
         } catch (err) {
             console.error('Chat error:', err);
             throw err;

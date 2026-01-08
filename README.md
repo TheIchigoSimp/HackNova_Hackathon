@@ -5,16 +5,16 @@ Welcome to  **Path Genie** ! 🎉 Your ultimate companion for creating personali
 
 ## Table of Contents
 
-* [Features]()
-* [Tech Stack]()
-* [Demo]()
-* [Prerequisites]()
-* [Installation]()
-* [Configuration]()
-* [Usage]()
-* [Project Structure]()
-* [Contributing]()
-* [Acknowledgements]()
+* [Features](#features)
+* [Tech Stack](#tech-stack)
+* [Demo](#demo)
+* [Prerequisites](#prerequisites)
+* [Installation](#installation)
+* [Configuration](#configuration)
+* [Usage](#usage)
+* [Project Structure](#project-structure)
+* [Contributing](#contributing)
+* [Acknowledgements](#acknowledgements)
 
 ## Features
 
@@ -23,7 +23,10 @@ Welcome to  **Path Genie** ! 🎉 Your ultimate companion for creating personali
 * 🖱️  **User-Friendly Interface** : Effortlessly enter topics and navigate your visual path.
 * ✏️  **Customizable Paths** : Tweak nodes and connections to make the path truly yours.
 * 📱  **Responsive Design** : Learn on the go, whether on desktop or mobile.
-* 📄  **Resume Agent** (NEW): AI-powered resume analysis with ATS scoring and personalized suggestions.
+* 📄  **Resume Agent** : AI-powered resume analysis with ATS scoring and personalized suggestions.
+* ⚡  **Streaming Chat** : Real-time AI responses with token streaming for smooth UX.
+* 🔍  **Job Search** : Find job opportunities matching your resume skills via web search.
+* 💾  **Session Persistence** : Resume analysis sessions saved across page refreshes.
 
 ## Tech Stack
 
@@ -34,13 +37,14 @@ Welcome to  **Path Genie** ! 🎉 Your ultimate companion for creating personali
 * 🔐  **Authentication** : Better Auth (email/password & GitHub SSO)
 * 🎨  **Styling** : Tailwind CSS (looking sharp!)
 * 🤖  **Resume Agent** : Python, FastAPI, LangGraph, FAISS (standalone microservice)
+* 🔍  **Web Search** : DuckDuckGo integration for job discovery
 * ⚙️  **Others** : Vite, Mongoose, Axios (the behind-the-scenes heroes)
 
 ## Demo
 
 Try out Path Genie live at [https://pathgenie.onrender.com/](https://pathgenie.onrender.com/). Use the following dummy credentials to explore:
 
-* **Email** : [testuser@gmail.com](testuser@gmail.com)
+* **Email** : testuser@gmail.com
 * **Password** : Password@2025
 
 Feel free to create your own account too! 😊
@@ -87,7 +91,7 @@ Before you start, make sure you have:
 3. **Set Up MongoDB** :
 
 * Make sure MongoDB is up and running (locally or on the cloud).
-* Update the `MONGODB_URI` in the backend `.env` file (details in [Configuration](https://grok.com/chat/9a382970-2097-4d7c-ae75-a29e5d78d103#configuration)).
+* Update the `MONGODB_URI` in the backend `.env` file (details in [Configuration](#configuration)).
 
 ## Configuration
 
@@ -112,6 +116,13 @@ Create a `.env` file in the `client` directory with:
 VITE_SERVER_URL=http://localhost:8000
 VITE_CLIENT_URL=http://localhost:5173
 VITE_MODE=development
+VITE_RESUME_AGENT_URL=http://localhost:8001
+```
+
+Create a `.env` file in the `resume_agent_service` directory with:
+
+```bash
+GROQ_API_KEY=your_groq_api_key
 ```
 
 > **Note** : For production, set `NODE_ENV=production` in the backend `.env` and `VITE_MODE=production` in the frontend `.env`.
@@ -140,10 +151,10 @@ Head to `http://localhost:5173` to see the magic!
 
 ```bash
    cd resume_agent_service
-   uvicorn app.main:app --reload --port 8005
+   uvicorn app.main:app --reload --port 8001
 ```
 
-Resume Agent API available at `http://localhost:8005`.
+Resume Agent API available at `http://localhost:8001`.
 
 4. **Explore Path Genie** 🌟:
 
@@ -152,7 +163,15 @@ Resume Agent API available at `http://localhost:8005`.
 * Watch as Path Genie crafts a beautiful learning path with React Flow.
 * Click on nodes to discover curated resources from Groq's AI API.
 
-5. **Make It Yours** ✏️:
+5. **Use the Resume Agent** 📝:
+
+* Navigate to the Resume Analyzer page
+* Upload your PDF resume for instant ATS scoring
+* Chat with the AI to get personalized improvement suggestions
+* Ask about job opportunities matching your skills
+* Enjoy streaming responses for a smooth experience
+
+6. **Make It Yours** ✏️:
 
 * Drag nodes around to customize your path.
 * Dive into resources by clicking on nodes.
@@ -164,54 +183,45 @@ Resume Agent API available at `http://localhost:8005`.
 path-genie/
 ├── client/                     # Frontend (React)
 │   ├── src/
-│   │   ├── api/                # API-related code
+│   │   ├── api/                # API calls (resumeAgentApi, resumeSessionApi)
 │   │   ├── assets/             # Static assets
 │   │   ├── components/         # React components
+│   │   │   └── ResumeAgent/    # Resume analysis UI components
 │   │   ├── hooks/              # Custom hooks
 │   │   ├── lib/                # Auth client setup (Better Auth)
-│   │   ├── Pages/              # Page components
+│   │   ├── Pages/              # Page components (ResumeAnalyzer, etc.)
 │   │   ├── utils/              # Utility functions
 │   │   ├── App.jsx             # Main app component
 │   │   ├── index.css           # Global styles
 │   │   └── main.jsx            # Entry point
 │   ├── public/                 # Public assets
-│   │   ├── pathgenie.png
-│   │   └── vite.svg
 │   ├── .env                    # Frontend environment variables
-│   ├── .env.sample
-│   ├── .gitignore
-│   ├── constants.js
-│   ├── eslint.config.js
-│   ├── index.html
-│   ├── package.json
-│   ├── reactFlowBestPractices.md
-│   └── vite.config.js
+│   └── package.json
 ├── server/                     # Backend (Node.js/Express)
 │   ├── config/                 # Configuration files
-│   │   └── config.js
 │   ├── controllers/            # Controller functions
-│   │   ├── mindmapController.js
-│   │   └── userController.js
+│   │   └── resumeSessionController.js  # Session persistence
 │   ├── db/                     # Database connection
-│   │   └── index.js
 │   ├── lib/                    # Auth setup (Better Auth)
-│   │   └── auth.js
 │   ├── middlewares/            # Middleware functions
 │   ├── models/                 # Mongoose models
+│   │   └── ResumeSession.model.js  # Resume session schema
 │   ├── routes/                 # API routes
+│   │   └── resumeSessionRoutes.js  # Session CRUD endpoints
 │   ├── services/               # Service functions
 │   ├── utils/                  # Utility functions
 │   ├── app.js                  # Express app setup
-│   ├── constants.js
 │   ├── index.js                # Server entry point
-│   ├── Working.md
-│   ├── workingOfEdge.md
 │   ├── .env                    # Backend environment variables
-│   ├── .env.sample
-│   ├── .gitignore
 │   └── package.json
 ├── resume_agent_service/       # Resume Analysis Microservice (Python)
-│   ├── app/                    # FastAPI app, LangGraph, tools
+│   ├── app/
+│   │   ├── main.py             # FastAPI endpoints + streaming
+│   │   ├── core/               # Config and state schema
+│   │   ├── graph/              # LangGraph nodes and builder
+│   │   ├── tools/              # RAG, ATS scorer, web search
+│   │   ├── memory/             # Thread checkpointing
+│   │   └── services/           # Resume ingestion service
 │   ├── rules/                  # Architecture documentation
 │   └── requirements.txt
 ├── rules/                      # Project-wide architecture docs
@@ -229,7 +239,7 @@ We welcome contributions to Path Genie! To contribute:
 4. Push to the branch (`git push origin feature/your-feature`).
 5. Open a pull request with a detailed description of your changes.
 
-Please follow our Code of Conduct and ensure your code adheres to the project’s style guidelines (e.g., ESLint, Prettier).
+Please follow our Code of Conduct and ensure your code adheres to the project's style guidelines (e.g., ESLint, Prettier).
 
 ## Acknowledgements
 
@@ -237,6 +247,8 @@ Please follow our Code of Conduct and ensure your code adheres to the project’
 * [Groq AI API](https://groq.com/) for providing intelligent learning resources.
 * [Better Auth](https://www.better-auth.com/) for secure authentication.
 * [Mongoose](https://mongoosejs.com/) for MongoDB integration.
+* [LangGraph](https://langchain-ai.github.io/langgraph/) for AI agent orchestration.
+* [DuckDuckGo](https://duckduckgo.com/) for free web search capabilities.
 * The open-source community for their invaluable tools and resources.
 
 ---

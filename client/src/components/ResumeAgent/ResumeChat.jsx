@@ -412,16 +412,58 @@ const ResumeChat = ({ threadId, onSendMessage, isLoading, initialMessages = [], 
         const userMessage = inputValue.trim();
         setInputValue('');
 
+        // Add user message
         const newUserMsg = { role: 'user', content: userMessage };
         setMessages(prev => [...prev, newUserMsg]);
 
+        // Add placeholder for streaming assistant response
+        const streamingMsgIndex = messages.length + 1; // Account for the user message we just added
+        setMessages(prev => [...prev, { role: 'assistant', content: '', isStreaming: true }]);
+
         try {
-            const response = await onSendMessage(userMessage);
-            const newAssistantMsg = { role: 'assistant', content: response };
-            setMessages(prev => [...prev, newAssistantMsg]);
+            // Use streaming callback to update message in real-time
+            const response = await onSendMessage(userMessage, (token, fullText) => {
+                setMessages(prev => {
+                    const updated = [...prev];
+                    // Update the last message (the streaming one)
+                    if (updated.length > 0) {
+                        updated[updated.length - 1] = {
+                            role: 'assistant',
+                            content: fullText,
+                            isStreaming: true
+                        };
+                    }
+                    return updated;
+                });
+                // Scroll to bottom on each token
+                scrollToBottom();
+            });
+
+            // Mark streaming complete
+            setMessages(prev => {
+                const updated = [...prev];
+                if (updated.length > 0) {
+                    updated[updated.length - 1] = {
+                        role: 'assistant',
+                        content: response || updated[updated.length - 1].content,
+                        isStreaming: false
+                    };
+                }
+                return updated;
+            });
         } catch (error) {
-            const errorMsg = { role: 'assistant', content: 'Sorry, I encountered an error. Please try again.' };
-            setMessages(prev => [...prev, errorMsg]);
+            // Update the streaming message to show error
+            setMessages(prev => {
+                const updated = [...prev];
+                if (updated.length > 0 && updated[updated.length - 1].isStreaming) {
+                    updated[updated.length - 1] = {
+                        role: 'assistant',
+                        content: 'Sorry, I encountered an error. Please try again.',
+                        isStreaming: false
+                    };
+                }
+                return updated;
+            });
         }
     };
 

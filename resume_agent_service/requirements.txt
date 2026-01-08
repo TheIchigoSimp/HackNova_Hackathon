@@ -18,3 +18,5 @@ langgraph-checkpoint-sqlite
 SQLAlchemy
 pypdf
 faiss-cpu
+duckduckgo-search>=5.0.0
+aiosqlite

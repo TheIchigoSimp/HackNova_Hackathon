@@ -1,9 +1,14 @@
 from uuid import uuid4
+import json
+import asyncio
+import logging
+import traceback
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import HumanMessage, AIMessageChunk
 
 from app.core.config import get_settings
 from app.services.resume_service import (
@@ -15,6 +20,13 @@ from app.services.resume_service import (
 from app.tools.ats_scorer import calculate_ats_score
 from app.graph import resume_agent
 from app.memory.checkpointer import list_all_threads
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger("resume_agent")
 
 settings = get_settings()
 
@@ -72,6 +84,7 @@ class ResumeAnalysisResponse(BaseModel):
 @app.get("/health")
 async def health_check():
     """Health check endpoint."""
+    logger.info("Health check requested")
     return {
         "status": "healthy",
         "service": "resume_agent_service",
@@ -86,38 +99,39 @@ async def upload_resume(
 ):
     """
     Upload a PDF resume for analysis.
-    
-    - Creates a new thread if none provided.
-    - Ingests the PDF, builds vector index.
-    - IMMEDIATELY runs ATS analysis and returns full results.
-    - Thread becomes ready for normal chat after this.
     """
+    logger.info(f"Resume upload requested: filename={file.filename}, thread_id={thread_id}")
+    
     if not file.filename.lower().endswith('.pdf'):
         raise HTTPException(status_code=400, detail="Only PDF files are supported.")
     
-    # Generate thread ID if not provided
     if not thread_id:
         thread_id = str(uuid4())
+        logger.info(f"Generated new thread_id: {thread_id}")
     
     file_bytes = await file.read()
+    logger.info(f"Read {len(file_bytes)} bytes from file")
     
     try:
         # Step 1: Ingest PDF and build vector store
+        logger.info(f"Ingesting PDF for thread {thread_id}")
         ingest_result = ingest_resume_pdf(file_bytes, thread_id, file.filename)
+        logger.info(f"Ingest result: {ingest_result}")
         
         # Step 2: Retrieve full resume text for ATS analysis
         retriever = get_retriever(thread_id)
         if retriever is None:
             raise HTTPException(status_code=500, detail="Failed to create retriever.")
         
-        # Get comprehensive resume content
         all_chunks = retriever.invoke("skills experience education projects summary contact")
         full_text = "\n".join([doc.page_content for doc in all_chunks])
+        logger.info(f"Retrieved {len(all_chunks)} chunks, {len(full_text)} chars total")
         
-        # Step 3: Run ATS scoring immediately
+        # Step 3: Run ATS scoring
+        logger.info("Calculating ATS score")
         ats_result = calculate_ats_score(full_text)
+        logger.info(f"ATS score: {ats_result['total_score']}")
         
-        # Mark thread as analysis complete (for chat routing)
         _THREAD_ANALYSIS_COMPLETE[thread_id] = True
         
         return ResumeAnalysisResponse(
@@ -133,60 +147,140 @@ async def upload_resume(
             message="Resume analyzed successfully! You can now chat about your resume."
         )
     except Exception as e:
+        logger.error(f"Upload error: {str(e)}\n{traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Failed to process resume: {str(e)}")
 
 
 @app.post("/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):
     """
-    Send a message to the Resume Agent.
-    
-    - Requires a valid thread_id with an uploaded resume.
-    - Works as a normal chatbot after resume upload.
+    Send a message to the Resume Agent (non-streaming).
     """
     thread_id = request.thread_id
+    logger.info(f"Chat request: thread_id={thread_id}, message={request.message[:50]}...")
     
     if not thread_has_resume(thread_id):
+        logger.warning(f"No resume found for thread {thread_id}")
         raise HTTPException(
             status_code=400,
             detail="No resume found for this thread. Please upload a resume first."
         )
     
-    # Prepare state - always in chat mode after upload
     config = {"configurable": {"thread_id": thread_id}}
     input_state = {
         "messages": [HumanMessage(content=request.message)],
-        "mode": "chat",  # Always chat mode after upload
+        "mode": "chat",
         "thread_id": thread_id,
         "resume_analysis": None,
-        "analysis_complete": True  # Analysis already done on upload
+        "analysis_complete": True
     }
     
     try:
-        # Invoke the graph
+        logger.info(f"Invoking agent for thread {thread_id}")
         result = resume_agent.invoke(input_state, config=config)
         
-        # Extract the last AI message
         messages = result.get("messages", [])
         last_message = messages[-1].content if messages else "No response generated."
+        logger.info(f"Agent response: {last_message[:100]}...")
         
         return ChatResponse(
             thread_id=thread_id,
             response=last_message
         )
     except Exception as e:
+        logger.error(f"Chat error: {str(e)}\n{traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Agent error: {str(e)}")
+
+
+@app.post("/chat/stream")
+async def chat_stream(request: ChatRequest):
+    """
+    Stream chat responses token by token using Server-Sent Events (SSE).
+    """
+    thread_id = request.thread_id
+    logger.info(f"Stream chat request: thread_id={thread_id}, message={request.message[:50]}...")
+    
+    if not thread_has_resume(thread_id):
+        logger.warning(f"No resume found for thread {thread_id}")
+        raise HTTPException(
+            status_code=400,
+            detail="No resume found for this thread. Please upload a resume first."
+        )
+    
+    config = {"configurable": {"thread_id": thread_id}}
+    input_state = {
+        "messages": [HumanMessage(content=request.message)],
+        "mode": "chat",
+        "thread_id": thread_id,
+        "resume_analysis": None,
+        "analysis_complete": True
+    }
+    
+    async def event_generator():
+        """Generate SSE events from the LangGraph stream."""
+        full_response = ""
+        
+        try:
+            logger.info(f"Starting stream for thread {thread_id}")
+            
+            # Use astream_events for token-level streaming
+            async for event in resume_agent.astream_events(input_state, config=config, version="v2"):
+                event_type = event.get("event", "")
+                
+                # Log all events for debugging
+                if event_type not in ["on_chain_start", "on_chain_end", "on_parser_start", "on_parser_end"]:
+                    logger.debug(f"Event: {event_type}")
+                
+                # Stream tokens from the chat model
+                if event_type == "on_chat_model_stream":
+                    chunk = event.get("data", {}).get("chunk")
+                    if chunk and hasattr(chunk, "content") and chunk.content:
+                        token = chunk.content
+                        full_response += token
+                        yield f"data: {json.dumps({'token': token})}\n\n"
+                
+                # Handle tool calls
+                elif event_type == "on_tool_start":
+                    tool_name = event.get("name", "tool")
+                    logger.info(f"Tool started: {tool_name}")
+                    yield f"data: {json.dumps({'status': f'Using {tool_name}...'})}\n\n"
+                
+                elif event_type == "on_tool_end":
+                    tool_name = event.get("name", "tool")
+                    logger.info(f"Tool ended: {tool_name}")
+                    
+            logger.info(f"Stream complete, total response: {len(full_response)} chars")
+            yield f"data: {json.dumps({'done': True, 'full_response': full_response})}\n\n"
+            yield "data: [DONE]\n\n"
+            
+        except Exception as e:
+            error_msg = str(e)
+            logger.error(f"Stream error: {error_msg}\n{traceback.format_exc()}")
+            yield f"data: {json.dumps({'error': error_msg})}\n\n"
+            yield "data: [DONE]\n\n"
+    
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        }
+    )
 
 
 @app.get("/threads")
 async def get_threads():
     """List all available thread IDs."""
+    logger.info("Listing threads")
     return {"threads": list_all_threads()}
 
 
 @app.get("/threads/{thread_id}/metadata")
 async def get_thread_info(thread_id: str):
     """Get metadata for a specific thread's resume."""
+    logger.info(f"Getting metadata for thread {thread_id}")
     metadata = get_thread_metadata(thread_id)
     if not metadata:
         raise HTTPException(status_code=404, detail="Thread not found or no resume uploaded.")

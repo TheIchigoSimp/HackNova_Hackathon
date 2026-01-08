@@ -8,7 +8,9 @@ A standalone Python microservice for AI-powered resume analysis and intelligent 
 - **📊 ATS Scoring**: Get an Applicant Tracking System compatibility score (0-100)
 - **🤖 LLM-Powered Suggestions**: Receive personalized improvement recommendations from AI
 - **💬 Agentic Chat**: Chat naturally about your resume using RAG (Retrieval-Augmented Generation)
-- **🧵 Thread-Based Memory**: Each conversation maintains context via SQLite checkpointing
+- **⚡ Streaming Responses**: Real-time token streaming for smooth chat experience
+- **🔍 Web Search**: Search for job opportunities and career advice using DuckDuckGo
+- **🧵 Thread-Based Memory**: Each conversation maintains context via MemorySaver
 
 ## 🚀 Quick Start
 
@@ -26,7 +28,7 @@ cp .env.example .env
 
 ### 3. Run the Service
 ```bash
-uvicorn app.main:app --reload --port 8005
+uvicorn app.main:app --reload --port 8001
 ```
 
 ## 📡 API Endpoints
@@ -61,18 +63,32 @@ Body: file=<your_resume.pdf>
   "action_verbs_found": ["developed", "managed", "led"],
   "suggestions": [
     "Add AWS or cloud certifications to boost technical score",
-    "Quantify your achievements with metrics",
-    "..."
+    "Quantify your achievements with metrics"
   ],
   "message": "Resume analyzed successfully!"
 }
 ```
 
-### Chat with Resume Agent
+### Chat with Resume Agent (Non-streaming)
 ```
 POST /chat
 Content-Type: application/json
 Body: {"thread_id": "abc-123", "message": "What are my key strengths?"}
+```
+
+### Chat with Resume Agent (Streaming)
+```
+POST /chat/stream
+Content-Type: application/json
+Body: {"thread_id": "abc-123", "message": "Find me job opportunities"}
+
+Response: Server-Sent Events (SSE)
+data: {"token": "Based"}
+data: {"token": " on"}
+data: {"token": " your"}
+data: {"status": "Using job_search_tool..."}
+data: {"done": true, "full_response": "..."}
+data: [DONE]
 ```
 
 ### List Threads
@@ -85,26 +101,38 @@ GET /threads
 GET /threads/{thread_id}/metadata
 ```
 
+## 🛠️ Available Tools
+
+The agent has access to these tools during chat:
+
+| Tool | Description |
+|------|-------------|
+| `resume_rag_tool` | Retrieve relevant sections from the uploaded resume |
+| `ats_score_tool` | Calculate or explain ATS scores |
+| `job_search_tool` | Search for job opportunities on the web |
+| `career_advice_search` | Find interview tips and career advice |
+
 ## 🏗️ Architecture
 
 ```
 resume_agent_service/
 ├── app/
-│   ├── main.py           # FastAPI endpoints
+│   ├── main.py              # FastAPI endpoints + streaming
 │   ├── core/
-│   │   ├── config.py     # Environment settings
-│   │   └── state.py      # LangGraph state schema
+│   │   ├── config.py        # Environment settings
+│   │   └── state.py         # LangGraph state schema
 │   ├── graph/
-│   │   ├── builder.py    # LangGraph compilation
-│   │   └── nodes.py      # Graph node functions
+│   │   ├── builder.py       # LangGraph compilation
+│   │   └── nodes.py         # Graph node functions
 │   ├── tools/
-│   │   ├── rag_tool.py   # Resume RAG retrieval
-│   │   └── ats_scorer.py # ATS scoring + LLM suggestions
+│   │   ├── rag_tool.py      # Resume RAG retrieval
+│   │   ├── ats_scorer.py    # ATS scoring + LLM suggestions
+│   │   └── web_search_tool.py  # DuckDuckGo search
 │   ├── memory/
-│   │   └── checkpointer.py
+│   │   └── checkpointer.py  # MemorySaver for thread state
 │   └── services/
 │       └── resume_service.py
-├── rules/                # Architecture documentation
+├── rules/                   # Architecture documentation
 ├── requirements.txt
 └── .env.example
 ```
@@ -125,7 +153,8 @@ resume_agent_service/
 - **LLM**: Groq (openai/gpt-oss-120b)
 - **Embeddings**: HuggingFace (sentence-transformers/all-MiniLM-L6-v2)
 - **Vector Store**: FAISS
-- **Memory**: SQLite (LangGraph Checkpointer)
+- **Web Search**: DuckDuckGo (no API key required)
+- **Memory**: MemorySaver (in-memory, for async streaming support)
 
 ## 📝 License
 

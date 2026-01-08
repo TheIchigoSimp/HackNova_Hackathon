@@ -1,5 +1,7 @@
 from __future__ import annotations
 from typing import Optional, Dict, Any
+import logging
+import traceback
 
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from langchain_groq import ChatGroq
@@ -13,6 +15,9 @@ from app.tools.ats_scorer import calculate_ats_score
 
 load_dotenv()
 settings = get_settings()
+
+# Configure logging
+logger = logging.getLogger("resume_agent.nodes")
 
 # Initialize LLM
 llm = ChatGroq(model="openai/gpt-oss-120b")
@@ -103,22 +108,46 @@ def chat_node(state: AgentState, config: Optional[Dict] = None) -> Dict[str, Any
     Handle user chat messages using the LLM with tools.
     """
     thread_id = state.get("thread_id")
+    logger.info(f"chat_node called for thread {thread_id}")
+    
+    # Log the incoming message
+    last_msg = state["messages"][-1] if state["messages"] else None
+    if last_msg:
+        logger.info(f"User message: {last_msg.content[:100] if hasattr(last_msg, 'content') else str(last_msg)[:100]}...")
     
     system_prompt = f"""You are a helpful resume assistant. You have analyzed the user's resume and can answer questions about it.
 
-For questions about the resume content, use the `resume_rag_tool` with thread_id="{thread_id}".
-You can also use `ats_score_tool` to recalculate or explain ATS scores.
+AVAILABLE TOOLS:
+1. `resume_rag_tool` - Use with thread_id="{thread_id}" for questions about resume content
+2. `ats_score_tool` - Use to recalculate or explain ATS scores
+3. `job_search_tool` - Use when user asks about job opportunities, roles to apply for, or where to find jobs
+4. `career_advice_search` - Use for interview tips, career transitions, and professional development
+
+WHEN TO USE WEB SEARCH:
+- User asks "What roles can I apply for?" → Use job_search_tool with their skills
+- User asks "Where can I find jobs?" → Use job_search_tool
+- User asks "How do I prepare for interviews?" → Use career_advice_search
+- User asks about salary, companies, or job market → Use job_search_tool
 
 Be encouraging and provide actionable advice. Focus on:
-- Highlighting strengths
+- Highlighting strengths from their resume
 - Suggesting improvements
 - Helping tailor the resume for specific roles
+- Finding relevant job opportunities when asked
 
 If the user asks about something not in the resume, acknowledge it and suggest they add it."""
 
     system_message = SystemMessage(content=system_prompt)
     messages = [system_message, *state["messages"]]
     
-    response = llm_with_tools.invoke(messages, config=config)
-    
-    return {"messages": [response]}
+    try:
+        logger.info(f"Invoking LLM with {len(messages)} messages")
+        response = llm_with_tools.invoke(messages, config=config)
+        logger.info(f"LLM response type: {type(response).__name__}")
+        logger.info(f"LLM response content: {response.content[:100] if hasattr(response, 'content') and response.content else 'No content'}...")
+        return {"messages": [response]}
+    except Exception as e:
+        logger.error(f"LLM invocation error: {str(e)}\n{traceback.format_exc()}")
+        error_msg = AIMessage(content=f"I encountered an error while processing your request. Please try again.")
+        return {"messages": [error_msg]}
+
