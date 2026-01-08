@@ -23,6 +23,7 @@ Welcome to  **Path Genie** ! 🎉 Your ultimate companion for creating personali
 * 🖱️  **User-Friendly Interface** : Effortlessly enter topics and navigate your visual path.
 * ✏️  **Customizable Paths** : Tweak nodes and connections to make the path truly yours.
 * 📱  **Responsive Design** : Learn on the go, whether on desktop or mobile.
+* 📄  **Resume Agent** (NEW): AI-powered resume analysis with ATS scoring and personalized suggestions.
 
 ## Tech Stack
 
@@ -32,6 +33,7 @@ Welcome to  **Path Genie** ! 🎉 Your ultimate companion for creating personali
 * 🔌  **API** : Groq AI API (your intelligent resource genie)
 * 🔐  **Authentication** : Better Auth (email/password & GitHub SSO)
 * 🎨  **Styling** : Tailwind CSS (looking sharp!)
+* 🤖  **Resume Agent** : Python, FastAPI, LangGraph, FAISS (standalone microservice)
 * ⚙️  **Others** : Vite, Mongoose, Axios (the behind-the-scenes heroes)
 
 ## Demo
@@ -51,6 +53,7 @@ Before you start, make sure you have:
 * 🟢 MongoDB (local or cloud, like MongoDB Atlas)
 * 🟢 Git
 * 🟢 A Groq API key (grab it from [Groq Console](https://console.groq.com/))
+* 🟢 Python 3.10+ (for Resume Agent Service)
 * 🟢 A GitHub OAuth app (for that smooth SSO login)
 
 ## Installation
@@ -73,6 +76,12 @@ Before you start, make sure you have:
   ```bash
   cd client
   npm install
+  ```
+
+* For the Resume Agent Service:
+  ```bash
+  cd resume_agent_service
+  pip install -r requirements.txt
   ```
 
 3. **Set Up MongoDB** :
@@ -127,14 +136,23 @@ Your backend will be live at `http://localhost:8000`.
 
 Head to `http://localhost:5173` to see the magic!
 
-3. **Explore Path Genie** 🌟:
+3. **Start the Resume Agent** 📄:
+
+```bash
+   cd resume_agent_service
+   uvicorn app.main:app --reload --port 8005
+```
+
+Resume Agent API available at `http://localhost:8005`.
+
+4. **Explore Path Genie** 🌟:
 
 * Visit `http://localhost:5173` and log in (or sign up) with email/password or GitHub.
 * Type in a topic like "Learn Python Programming" and hit enter.
 * Watch as Path Genie crafts a beautiful learning path with React Flow.
 * Click on nodes to discover curated resources from Groq's AI API.
 
-4. **Make It Yours** ✏️:
+5. **Make It Yours** ✏️:
 
 * Drag nodes around to customize your path.
 * Dive into resources by clicking on nodes.
@@ -192,6 +210,11 @@ path-genie/
 │   ├── .env.sample
 │   ├── .gitignore
 │   └── package.json
+├── resume_agent_service/       # Resume Analysis Microservice (Python)
+│   ├── app/                    # FastAPI app, LangGraph, tools
+│   ├── rules/                  # Architecture documentation
+│   └── requirements.txt
+├── rules/                      # Project-wide architecture docs
 ├── README.md                   # You're here! 👋
 └── package.json                # Project metadata and scripts
 ```
