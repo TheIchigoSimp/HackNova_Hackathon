@@ -23,9 +23,23 @@ const AuthForm = ({ isLogin = false }) => {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Sanitize email input to prevent XSS and ensure valid format
+  const sanitizeEmail = (email) => {
+    return email
+      .trim()                           // Remove leading/trailing whitespace
+      .toLowerCase()                    // Convert to lowercase
+      .replace(/<[^>]*>/g, "")          // Remove HTML tags
+      .replace(/[<>'"`;(){}[\]]/g, "")  // Remove potentially dangerous characters
+      .slice(0, 254);                   // Limit length (RFC 5321 max email length)
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+
+    // Apply sanitization for email field
+    const sanitizedValue = name === "email" ? sanitizeEmail(value) : value;
+
+    setFormData((prev) => ({ ...prev, [name]: sanitizedValue }));
     setErrors((prev) => ({
       ...prev,
       [name]: "",
@@ -163,15 +177,16 @@ const AuthForm = ({ isLogin = false }) => {
       )}
 
       <div className="pt-4 flex justify-center">
-        <SlideButton
-          type="button"
-          text={isLogin ? "Login" : "Register"}
-          icon={isLogin ? <GrLogin /> : <FaUserPlus />}
-          fullWidth={true}
-          disabled={isSubmitting}
-          onClick={handleSubmit}
-          style={{ maxWidth: "200px" }}
-        />
+        <div className="w-48">
+          <SlideButton
+            type="button"
+            text={isLogin ? "Login" : "Register"}
+            icon={isLogin ? <GrLogin /> : <FaUserPlus />}
+            fullWidth={true}
+            disabled={isSubmitting}
+            onClick={handleSubmit}
+          />
+        </div>
       </div>
     </div>
   );
@@ -190,9 +205,8 @@ const InputField = ({
   fullWidth = false,
 }) => (
   <div
-    className={`transition-all duration-300 ${
-      fullWidth ? "w-full" : "w-full sm:w-1/2"
-    }`}
+    className={`transition-all duration-300 ${fullWidth ? "w-full" : "w-full sm:w-1/2"
+      }`}
   >
     <label
       htmlFor={id}
