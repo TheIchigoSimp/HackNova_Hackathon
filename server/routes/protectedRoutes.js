@@ -12,6 +12,8 @@ import authMiddleware from '../middlewares/authMiddleware.js';
 import userRoutes from './userRoutes.js';
 import mindmapRoutes from './mindmapRoutes.js';
 import { getCertifications } from '../controllers/certificationController.js';
+import resumeSessionRoutes from './resumeSessionRoutes.js';
+
 
 /**
  * Express Router instance for the protected routes.
@@ -21,6 +23,7 @@ const router = express.Router();
 
 router.use('/user', authMiddleware, userRoutes);
 router.use('/mindmaps', authMiddleware, mindmapRoutes);
+router.use('/resume-session', authMiddleware, resumeSessionRoutes);
 
 router.post('/certifications', authMiddleware, getCertifications);
 

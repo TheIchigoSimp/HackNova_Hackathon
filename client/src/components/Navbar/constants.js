@@ -8,6 +8,7 @@ export const navLinks = [
   { to: "/dashboard", label: "Dashboard" },
   { to: "/profile", label: "Profile" },
   { to: "/certifications", label: "Certifications" },
+  { to: "/resume-analyzer", label: "Resume" },
 ];
 
 // If you ever want more links (e.g. /settings, /about), just append to this array.
