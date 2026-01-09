@@ -17,6 +17,7 @@ import {
     clearResumeSession 
 } from '../api/resumeSessionApi';
 import { useNavbarVisibility } from '../hooks/useNavbarVisibility';
+import { useSession } from '../lib/auth-client';
 
 const PageContainer = styled.div`
   min-height: 100vh;
@@ -282,13 +283,16 @@ const ResumeAnalyzer = () => {
     const [filename, setFilename] = useState('');
     const fileInputRef = useRef(null);
     const isNavbarVisible = useNavbarVisibility(600, 43);
+    const { data: session } = useSession();
 
     // Restore session from MongoDB on mount
     useEffect(() => {
         const restoreSession = async () => {
             try {
                 const session = await getResumeSession();
+                console.log('Restored session from MongoDB:', session);
                 if (session) {
+                    console.log('Session analysisResult:', session.analysisResult);
                     setThreadId(session.threadId);
                     setFilename(session.filename || '');
                     setAnalysisResult({
@@ -364,7 +368,10 @@ const ResumeAnalyzer = () => {
         setError(null);
 
         try {
-            const result = await uploadResume(file);
+            const userId = session?.user?.id || 'anonymous';
+            console.log('Uploading with userId:', userId, 'session:', session);
+            const result = await uploadResume(file, userId);
+            console.log('Upload result:', result);
             setAnalysisResult(result);
             setThreadId(result.thread_id);
             setFilename(file.name);
@@ -384,11 +391,23 @@ const ResumeAnalyzer = () => {
             });
         } catch (err) {
             console.error('Upload error:', err);
-            setError(err.response?.data?.detail || 'Failed to analyze resume. Please try again.');
+            // Handle FastAPI validation errors which return an array of error objects
+            let errorMessage = 'Failed to analyze resume. Please try again.';
+            if (err.response?.data?.detail) {
+                const detail = err.response.data.detail;
+                if (Array.isArray(detail)) {
+                    errorMessage = detail.map(e => e.msg || JSON.stringify(e)).join(', ');
+                } else if (typeof detail === 'string') {
+                    errorMessage = detail;
+                } else {
+                    errorMessage = JSON.stringify(detail);
+                }
+            }
+            setError(errorMessage);
         } finally {
             setIsUploading(false);
         }
-    }, [file]);
+    }, [file, session]);
 
     const handleSendMessage = useCallback(async (message, onStreamToken = null) => {
         if (!threadId) return;

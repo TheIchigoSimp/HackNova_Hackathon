@@ -3,7 +3,7 @@ import json
 import asyncio
 import logging
 import traceback
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
@@ -20,6 +20,7 @@ from app.services.resume_service import (
 from app.tools.ats_scorer import calculate_ats_score
 from app.graph import resume_agent
 from app.memory.checkpointer import list_all_threads
+from app.memory.thread_store import get_user_threads, update_thread_ats_score
 
 # Configure logging
 logging.basicConfig(
@@ -95,12 +96,13 @@ async def health_check():
 @app.post("/resume/upload", response_model=ResumeAnalysisResponse)
 async def upload_resume(
     file: UploadFile = File(...),
-    thread_id: Optional[str] = None
+    thread_id: Optional[str] = None,
+    user_id: str = Query(..., description="User ID to associate this resume with")
 ):
     """
     Upload a PDF resume for analysis.
     """
-    logger.info(f"Resume upload requested: filename={file.filename}, thread_id={thread_id}")
+    logger.info(f"Resume upload requested: filename={file.filename}, thread_id={thread_id}, user_id={user_id}")
     
     if not file.filename.lower().endswith('.pdf'):
         raise HTTPException(status_code=400, detail="Only PDF files are supported.")
@@ -114,24 +116,21 @@ async def upload_resume(
     
     try:
         # Step 1: Ingest PDF and build vector store
-        logger.info(f"Ingesting PDF for thread {thread_id}")
-        ingest_result = ingest_resume_pdf(file_bytes, thread_id, file.filename)
-        logger.info(f"Ingest result: {ingest_result}")
+        logger.info(f"Ingesting PDF for thread {thread_id}, user {user_id}")
+        ingest_result = ingest_resume_pdf(file_bytes, thread_id, user_id, file.filename)
+        logger.info(f"Ingest result: pages={ingest_result['pages']}, chunks={ingest_result['chunks']}")
         
-        # Step 2: Retrieve full resume text for ATS analysis
-        retriever = get_retriever(thread_id)
-        if retriever is None:
-            raise HTTPException(status_code=500, detail="Failed to create retriever.")
-        
-        all_chunks = retriever.invoke("skills experience education projects summary contact")
-        full_text = "\n".join([doc.page_content for doc in all_chunks])
-        logger.info(f"Retrieved {len(all_chunks)} chunks, {len(full_text)} chars total")
+        # Step 2: Use full text directly from ingest (retriever may be empty due to eventual consistency)
+        full_text = ingest_result.get("full_text", "")
+        logger.info(f"Using {len(full_text)} chars for ATS analysis")
         
         # Step 3: Run ATS scoring
         logger.info("Calculating ATS score")
         ats_result = calculate_ats_score(full_text)
         logger.info(f"ATS score: {ats_result['total_score']}")
         
+        # Update ATS score in MongoDB
+        update_thread_ats_score(thread_id, ats_result["total_score"])
         _THREAD_ANALYSIS_COMPLETE[thread_id] = True
         
         return ResumeAnalysisResponse(
@@ -287,6 +286,62 @@ async def get_thread_info(thread_id: str):
     return metadata
 
 
+@app.get("/users/{user_id}/threads")
+async def get_user_conversation_history(user_id: str):
+    """
+    Get all conversation threads for a specific user.
+    Returns list of threads with resume metadata, sorted by most recent.
+    """
+    logger.info(f"Getting thread history for user {user_id}")
+    threads = get_user_threads(user_id)
+    return {
+        "user_id": user_id,
+        "threads": threads,
+        "count": len(threads)
+    }
+
+
+@app.get("/threads/{thread_id}/history")
+async def get_thread_message_history(thread_id: str):
+    """
+    Get full conversation history for a thread.
+    Retrieves messages from LangGraph checkpointer.
+    """
+    from app.memory.checkpointer import get_checkpointer
+    
+    logger.info(f"Getting message history for thread {thread_id}")
+    
+    checkpointer = get_checkpointer()
+    config = {"configurable": {"thread_id": thread_id}}
+    
+    try:
+        # Get the latest checkpoint for this thread
+        checkpoint_tuple = checkpointer.get_tuple(config)
+        if not checkpoint_tuple:
+            raise HTTPException(status_code=404, detail="Thread not found or no conversation history.")
+        
+        checkpoint = checkpoint_tuple.checkpoint
+        messages = checkpoint.get("channel_values", {}).get("messages", [])
+        
+        # Format messages for response
+        formatted_messages = []
+        for msg in messages:
+            role = "human" if hasattr(msg, "type") and msg.type == "human" else "ai"
+            content = msg.content if hasattr(msg, "content") else str(msg)
+            formatted_messages.append({"role": role, "content": content})
+        
+        return {
+            "thread_id": thread_id,
+            "messages": formatted_messages,
+            "message_count": len(formatted_messages)
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting thread history: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve history: {str(e)}")
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(
@@ -295,3 +350,4 @@ if __name__ == "__main__":
         port=settings.PORT,
         reload=(settings.ENVIRONMENT == "development")
     )
+

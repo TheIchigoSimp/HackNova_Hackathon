@@ -11,19 +11,22 @@ const resumeAgentAxios = axios.create({
  * Returns immediate ATS scoring and AI suggestions.
  *
  * @param {File} file - The PDF file to upload
+ * @param {string} userId - The user ID to associate this resume with
  * @param {string} [threadId] - Optional thread ID to reuse
  * @returns {Promise<Object>} Analysis results including ATS score and suggestions
  */
-export const uploadResume = async (file, threadId = null) => {
+export const uploadResume = async (file, userId, threadId = null) => {
     const formData = new FormData();
     formData.append('file', file);
 
-    let url = '/resume/upload';
+    // Build URL with required user_id and optional thread_id
+    const params = new URLSearchParams();
+    params.append('user_id', userId);
     if (threadId) {
-        url += `?thread_id=${encodeURIComponent(threadId)}`;
+        params.append('thread_id', threadId);
     }
 
-    const response = await resumeAgentAxios.post(url, formData, {
+    const response = await resumeAgentAxios.post(`/resume/upload?${params.toString()}`, formData, {
         headers: {
             'Content-Type': 'multipart/form-data',
         },

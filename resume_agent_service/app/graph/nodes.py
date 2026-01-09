@@ -134,7 +134,7 @@ Be encouraging and provide actionable advice. Focus on:
 - Suggesting improvements
 - Helping tailor the resume for specific roles
 - Finding relevant job opportunities when asked
-
+- Answer in brief only if the user asks for it else keep length to medium length
 If the user asks about something not in the resume, acknowledge it and suggest they add it."""
 
     system_message = SystemMessage(content=system_prompt)

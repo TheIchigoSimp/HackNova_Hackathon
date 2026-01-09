@@ -123,16 +123,17 @@ const getScoreGradient = (score) => {
     return 'linear-gradient(135deg, #ef4444 0%, #f87171 100%)';
 };
 
-const ATSScoreCard = ({ score, breakdown }) => {
+const ATSScoreCard = ({ score = 0, breakdown = {} }) => {
+    console.log('ATSScoreCard props:', { score, breakdown });
     const radius = 58;
     const circumference = 2 * Math.PI * radius;
     const offset = circumference - (score / 100) * circumference;
 
     const breakdownItems = [
-        { label: 'Technical Skills', value: breakdown.technical_skills, max: 35 },
-        { label: 'Soft Skills', value: breakdown.soft_skills, max: 25 },
-        { label: 'Action Verbs', value: breakdown.action_verbs, max: 20 },
-        { label: 'Formatting', value: breakdown.formatting, max: 20 },
+        { label: 'Technical Skills', value: breakdown.technical_skills || 0, max: 35 },
+        { label: 'Soft Skills', value: breakdown.soft_skills || 0, max: 25 },
+        { label: 'Action Verbs', value: breakdown.action_verbs || 0, max: 20 },
+        { label: 'Formatting', value: breakdown.formatting || 0, max: 20 },
     ];
 
     return (

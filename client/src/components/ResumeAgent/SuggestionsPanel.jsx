@@ -122,7 +122,8 @@ const Tag = styled(motion.span)`
   font-weight: 500;
 `;
 
-const SuggestionsPanel = ({ suggestions, skillsFound, actionVerbsFound }) => {
+const SuggestionsPanel = ({ suggestions = [], skillsFound = [], actionVerbsFound = [] }) => {
+    console.log('SuggestionsPanel props:', { suggestions, skillsFound, actionVerbsFound });
     const [skillsExpanded, setSkillsExpanded] = useState(true);
     const [verbsExpanded, setVerbsExpanded] = useState(true);
 
