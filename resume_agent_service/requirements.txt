@@ -20,3 +20,4 @@ pypdf
 faiss-cpu
 duckduckgo-search>=5.0.0
 aiosqlite
+python-dotenv
