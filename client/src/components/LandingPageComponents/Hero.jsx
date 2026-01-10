@@ -21,7 +21,7 @@ const Hero = () => {
           "[background-image:linear-gradient(to_right,rgba(102,126,234,0.1)_1px,transparent_1px),linear-gradient(to_bottom,rgba(102,126,234,0.1)_1px,transparent_1px)]"
         )}
       />
-      
+
       {/* Radial gradient mask */}
       <div className="pointer-events-none absolute inset-0 flex items-center justify-center [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]" />
 
@@ -31,12 +31,12 @@ const Hero = () => {
           <div className="relative">
             <div className="absolute inset-0 blur-3xl bg-gradient-to-r from-[#667eea]/20 via-[#764ba2]/20 to-[#f093fb]/20 rounded-full scale-150" />
             <img
-              src="/pathgenie.png"
+              src="/logo2.png"
               alt="Pathgenie"
               className="relative w-[200px] m-auto drop-shadow-2xl"
             />
           </div>
-          
+
           <TextGenerateEffect
             className="text-center md:text-5xl lg:text-6xl mt-6"
             words="Start Your Journey With PathGenie"
@@ -47,7 +47,7 @@ const Hero = () => {
               Define Your Path, Achieve Your Goals!
             </span>
           </p>
-          
+
           <p className="relative z-20 text-center text-sm md:text-base text-[#667eea] font-semibold tracking-wide uppercase">
             ✨ Powered by Generative AI
           </p>

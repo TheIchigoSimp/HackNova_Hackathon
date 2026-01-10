@@ -1,24 +1,24 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from functools import lru_cache
 from typing import Optional
+from dotenv import load_dotenv
 import os
+load_dotenv()
 class Settings(BaseSettings):
     """
     Application configuration settings.
     Inherits from pydantic BaseSettings to automatically load from env vars.
     """
     # Server Config
-    PORT: int = 8001
+    PORT: int = os.getenv("PORT", 8001)
     HOST: str = "0.0.0.0"
-    ENVIRONMENT: str = "development"
-    LOG_LEVEL: str = "info"
+    ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
+    LOG_LEVEL: str = os.getenv("LOG_LEVEL", "info")
 
     # API Keys & Secrets
-    GROQ_API_KEY: str = os.getenv("GROQ_API_KEY")
-    MONGODB_URI: str = os.getenv("MONGODB_URI")
-    DB_NAME: str = os.getenv("DB_NAME")
-    COLLECTION_NAME: str = os.getenv("COLLECTION_NAME")
-    
+    GROQ_API_KEY: Optional[str] = os.getenv("GROQ_API_KEY")
+    API_SECRET: str = os.getenv("API_SECRET", "default_secret_change_me")
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

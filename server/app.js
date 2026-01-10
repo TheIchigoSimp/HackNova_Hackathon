@@ -74,7 +74,9 @@ app.use(
  */
 app.use(
   cors({
-    origin: constants?.clientUrl,
+    origin: [constants?.clientUrl,
+      'https://pathgenie-client.onrender.com'
+    ],
     allowedHeaders: ['Content-Type', 'Authorization'],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH', 'HEAD'],
     credentials: true,

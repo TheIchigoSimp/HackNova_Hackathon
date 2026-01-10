@@ -7,6 +7,7 @@ export const activeLinkClasses = "text-white";
 export const navLinks = [
   { to: "/dashboard", label: "Dashboard" },
   { to: "/profile", label: "Profile" },
+  { to: "/certifications", label: "Certifications" },
   { to: "/resume-analyzer", label: "Resume" },
 ];
 

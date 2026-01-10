@@ -11,6 +11,7 @@ import express from 'express';
 import authMiddleware from '../middlewares/authMiddleware.js';
 import userRoutes from './userRoutes.js';
 import mindmapRoutes from './mindmapRoutes.js';
+import { getCertifications } from '../controllers/certificationController.js';
 import resumeSessionRoutes from './resumeSessionRoutes.js';
 
 
@@ -24,5 +25,6 @@ router.use('/user', authMiddleware, userRoutes);
 router.use('/mindmaps', authMiddleware, mindmapRoutes);
 router.use('/resume-session', authMiddleware, resumeSessionRoutes);
 
-export default router;
+router.post('/certifications', authMiddleware, getCertifications);
 
+export default router;
