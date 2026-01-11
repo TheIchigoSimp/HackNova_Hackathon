@@ -441,8 +441,12 @@ const ResumeAnalyzer = () => {
                 finalResponse = response.response;
             }
             
-            // Persist assistant response to MongoDB
-            await persistChatMessage('assistant', finalResponse);
+            // Persist assistant response to MongoDB (only if non-empty)
+            if (finalResponse && finalResponse.trim()) {
+                await persistChatMessage('assistant', finalResponse);
+            } else {
+                console.warn('Skipping persist: empty assistant response');
+            }
             
             return finalResponse;
         } catch (err) {

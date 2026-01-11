@@ -55,17 +55,22 @@ def _reconstruct_retriever(thread_id: str) -> Optional[Any]:
     embeddings = _get_embeddings()
     
     # Create vector store from existing collection
+    # Note: embedding_key must match your Atlas Search index path ("embeddings")
     vector_store = MongoDBAtlasVectorSearch(
         collection=collection,
         embedding=embeddings,
         index_name="vector_index",
+        embedding_key="embeddings",  # Match your Atlas index field name
     )
     
-    # Create retriever - filtering will be done once MongoDB Atlas index is configured
-    # For now, we rely on thread-specific sessions
+    # Create retriever with thread_id pre-filter
+    # This ensures we only search documents belonging to this thread
     retriever = vector_store.as_retriever(
         search_type="similarity",
-        search_kwargs={"k": 5}
+        search_kwargs={
+            "k": 5,
+            "pre_filter": {"thread_id": {"$eq": thread_id}}
+        }
     )
     
     # Cache it for future use
@@ -159,13 +164,16 @@ def ingest_resume_pdf(
             embedding=embeddings,
             collection=collection,
             index_name="vector_index",
+            embedding_key="embeddings",  # Match your Atlas index field name
         )
         
-        # Create and cache retriever
-        # Note: No filtering needed for fresh upload - all chunks are for this thread
+        # Create and cache retriever with thread_id pre-filter
         retriever = vector_store.as_retriever(
             search_type="similarity",
-            search_kwargs={"k": 5}
+            search_kwargs={
+                "k": 5,
+                "pre_filter": {"thread_id": {"$eq": thread_id}}
+            }
         )
         _THREAD_RETRIEVERS[str(thread_id)] = retriever
         

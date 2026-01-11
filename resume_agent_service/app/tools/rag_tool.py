@@ -26,9 +26,21 @@ def resume_rag_tool(query: str, thread_id: Optional[str] = None) -> dict:
     context = [doc.page_content for doc in results]
     metadata = [doc.metadata for doc in results]
     
+    # Handle empty results - provide clear message so LLM doesn't keep retrying
+    if not context:
+        thread_meta = get_thread_metadata(str(thread_id)) if thread_id else {}
+        return {
+            "query": query,
+            "context": [],
+            "metadata": [],
+            "source_file": thread_meta.get("filename", "unknown"),
+            "message": "No matching content found in the resume for this query. The resume may still be indexing or the vector search index needs configuration. Please answer based on your general knowledge about resume best practices.",
+        }
+    
     return {
         "query": query,
         "context": context,
         "metadata": metadata,
         "source_file": get_thread_metadata(str(thread_id)).get("filename"),
     }
+

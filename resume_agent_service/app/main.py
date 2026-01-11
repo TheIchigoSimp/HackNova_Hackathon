@@ -165,7 +165,10 @@ async def chat(request: ChatRequest):
             detail="No resume found for this thread. Please upload a resume first."
         )
     
-    config = {"configurable": {"thread_id": thread_id}}
+    config = {
+        "configurable": {"thread_id": thread_id},
+        "recursion_limit": 10  # Prevent infinite tool call loops
+    }
     input_state = {
         "messages": [HumanMessage(content=request.message)],
         "mode": "chat",
@@ -206,7 +209,10 @@ async def chat_stream(request: ChatRequest):
             detail="No resume found for this thread. Please upload a resume first."
         )
     
-    config = {"configurable": {"thread_id": thread_id}}
+    config = {
+        "configurable": {"thread_id": thread_id},
+        "recursion_limit": 10  # Prevent infinite tool call loops
+    }
     input_state = {
         "messages": [HumanMessage(content=request.message)],
         "mode": "chat",
@@ -218,6 +224,7 @@ async def chat_stream(request: ChatRequest):
     async def event_generator():
         """Generate SSE events from the LangGraph stream."""
         full_response = ""
+        tokens_streamed = False
         
         try:
             logger.info(f"Starting stream for thread {thread_id}")
@@ -236,6 +243,7 @@ async def chat_stream(request: ChatRequest):
                     if chunk and hasattr(chunk, "content") and chunk.content:
                         token = chunk.content
                         full_response += token
+                        tokens_streamed = True
                         yield f"data: {json.dumps({'token': token})}\n\n"
                 
                 # Handle tool calls
@@ -247,6 +255,37 @@ async def chat_stream(request: ChatRequest):
                 elif event_type == "on_tool_end":
                     tool_name = event.get("name", "tool")
                     logger.info(f"Tool ended: {tool_name}")
+                
+                # Capture the final response from chat_node output
+                elif event_type == "on_chain_end":
+                    # Check if this is the chat_node ending with an AIMessage
+                    output = event.get("data", {}).get("output", {})
+                    if isinstance(output, dict) and "messages" in output:
+                        messages = output.get("messages", [])
+                        for msg in messages:
+                            # Check if this is a content message (not just a tool call)
+                            has_tool_calls = hasattr(msg, "tool_calls") and msg.tool_calls
+                            if hasattr(msg, "content") and msg.content and not has_tool_calls:
+                                # This is a final AI response (not a tool call)
+                                if msg.content and not tokens_streamed:
+                                    # If we didn't stream tokens, send the full response as tokens
+                                    logger.info(f"Sending non-streamed response: {len(msg.content)} chars")
+                                    full_response = msg.content
+                                    # Send it in chunks to simulate streaming
+                                    for i in range(0, len(msg.content), 10):
+                                        chunk = msg.content[i:i+10]
+                                        yield f"data: {json.dumps({'token': chunk})}\n\n"
+                                        await asyncio.sleep(0.01)  # Small delay for smooth streaming
+                                    tokens_streamed = True
+                                elif msg.content and msg.content != full_response:
+                                    # Additional content after tool use
+                                    additional = msg.content
+                                    if not full_response.endswith(additional):
+                                        full_response += additional
+                                        for i in range(0, len(additional), 10):
+                                            chunk = additional[i:i+10]
+                                            yield f"data: {json.dumps({'token': chunk})}\n\n"
+                                            await asyncio.sleep(0.01)
                     
             logger.info(f"Stream complete, total response: {len(full_response)} chars")
             yield f"data: {json.dumps({'done': True, 'full_response': full_response})}\n\n"
