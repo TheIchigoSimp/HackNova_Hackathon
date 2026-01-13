@@ -1,20 +1,22 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import styled from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiUploadCloud, FiFile, FiX, FiCheckCircle, FiAlertCircle, FiRefreshCw } from 'react-icons/fi';
+import { FiUploadCloud, FiFile, FiX, FiCheckCircle, FiAlertCircle, FiRefreshCw} from 'react-icons/fi';
 import { HiDocumentText } from 'react-icons/hi';
 
 import ATSScoreCard from '../components/ResumeAgent/ATSScoreCard';
 import SuggestionsPanel from '../components/ResumeAgent/SuggestionsPanel';
 import ResumeChat from '../components/ResumeAgent/ResumeChat';
+import SessionHistoryPanel from '../components/ResumeAgent/SessionHistoryPanel';
 import SlideButton from '../components/Buttons/SlideButton';
 
 import { uploadResume, streamChatWithAgent, chatWithAgent } from '../api/resumeAgentApi';
 import { 
-    getResumeSession, 
-    saveResumeSession, 
+    getAllResumeSessions,
+    getResumeSessionById,
+    createResumeSession, 
     addChatMessage as persistChatMessage, 
-    clearResumeSession 
+    deleteResumeSession 
 } from '../api/resumeSessionApi';
 import { useNavbarVisibility } from '../hooks/useNavbarVisibility';
 import { useSession } from '../lib/auth-client';
@@ -41,7 +43,7 @@ const ContentArea = styled.div`
 `;
 
 const Header = styled.div`
-  max-width: 1400px;
+  max-width: 1600px;
   margin: 0 auto;
   text-align: center;
   padding-top: 48px;
@@ -66,6 +68,27 @@ const Subtitle = styled.p`
   @media (min-width: 768px) {
     font-size: 1rem;
   }
+`;
+
+const MainLayout = styled.div`
+  max-width: 1600px;
+  margin: 0 auto;
+  display: grid;
+  gap: 24px;
+  
+  @media (min-width: 1024px) {
+    grid-template-columns: 240px 1fr;
+  }
+`;
+
+const HistoryColumn = styled.div`
+  @media (max-width: 1023px) {
+    display: none; /* Hide on mobile for now */
+  }
+`;
+
+const MainColumn = styled.div`
+  min-width: 0;
 `;
 
 const UploadSection = styled.div`
@@ -172,8 +195,7 @@ const RemoveButton = styled.button`
 `;
 
 const ResultsSection = styled(motion.div)`
-  max-width: 1400px;
-  margin: 0 auto 48px;
+  margin-bottom: 48px;
 `;
 
 const ResultsGrid = styled.div`
@@ -276,44 +298,111 @@ const ResumeAnalyzer = () => {
     const [isUploading, setIsUploading] = useState(false);
     const [isChatLoading, setIsChatLoading] = useState(false);
     const [isRestoringSession, setIsRestoringSession] = useState(true);
+    const [isLoadingSession, setIsLoadingSession] = useState(false);
     const [error, setError] = useState(null);
     const [analysisResult, setAnalysisResult] = useState(null);
     const [threadId, setThreadId] = useState(null);
     const [chatMessages, setChatMessages] = useState([]);
     const [filename, setFilename] = useState('');
+    
+    // History state
+    const [allSessions, setAllSessions] = useState([]);
+    const [activeSessionId, setActiveSessionId] = useState(null);
+    
     const fileInputRef = useRef(null);
     const isNavbarVisible = useNavbarVisibility(600, 43);
     const { data: session } = useSession();
 
-    // Restore session from MongoDB on mount
+    // Fetch all sessions on mount
     useEffect(() => {
-        const restoreSession = async () => {
+        const fetchSessions = async () => {
             try {
-                const session = await getResumeSession();
-                console.log('Restored session from MongoDB:', session);
-                if (session) {
-                    console.log('Session analysisResult:', session.analysisResult);
-                    setThreadId(session.threadId);
-                    setFilename(session.filename || '');
+                const sessions = await getAllResumeSessions();
+                setAllSessions(sessions || []);
+                
+                // If there are sessions, load the most recent one
+                if (sessions && sessions.length > 0) {
+                    const mostRecent = sessions[0];
+                    setActiveSessionId(mostRecent._id);
+                    setThreadId(mostRecent.threadId);
+                    setFilename(mostRecent.filename || '');
                     setAnalysisResult({
-                        ats_score: session.analysisResult?.ats_score || 0,
-                        ats_breakdown: session.analysisResult?.ats_breakdown || {},
-                        skills_found: session.analysisResult?.skills_found || [],
-                        action_verbs_found: session.analysisResult?.action_verbs_found || [],
-                        suggestions: session.analysisResult?.suggestions || [],
+                        ats_score: mostRecent.analysisResult?.ats_score || 0,
+                        ats_breakdown: mostRecent.analysisResult?.ats_breakdown || {},
+                        skills_found: mostRecent.analysisResult?.skills_found || [],
+                        action_verbs_found: mostRecent.analysisResult?.action_verbs_found || [],
+                        suggestions: mostRecent.analysisResult?.suggestions || [],
                     });
-                    setChatMessages(session.chatMessages || []);
+                    setChatMessages(mostRecent.chatMessages || []);
                 }
             } catch (err) {
-                console.error('Failed to restore session:', err);
-                // Silently fail - user can just upload a new resume
+                console.error('Failed to fetch sessions:', err);
             } finally {
                 setIsRestoringSession(false);
             }
         };
 
-        restoreSession();
+        fetchSessions();
     }, []);
+
+    // Load a specific session from history
+    const handleLoadSession = useCallback(async (sessionId) => {
+        if (sessionId === activeSessionId) return;
+        
+        setIsLoadingSession(true);
+        try {
+            const session = await getResumeSessionById(sessionId);
+            if (session) {
+                setActiveSessionId(session._id);
+                setThreadId(session.threadId);
+                setFilename(session.filename || '');
+                setAnalysisResult({
+                    ats_score: session.analysisResult?.ats_score || 0,
+                    ats_breakdown: session.analysisResult?.ats_breakdown || {},
+                    skills_found: session.analysisResult?.skills_found || [],
+                    action_verbs_found: session.analysisResult?.action_verbs_found || [],
+                    suggestions: session.analysisResult?.suggestions || [],
+                });
+                setChatMessages(session.chatMessages || []);
+                setFile(null);
+                setError(null);
+            }
+        } catch (err) {
+            console.error('Failed to load session:', err);
+            setError('Failed to load session. Please try again.');
+        } finally {
+            setIsLoadingSession(false);
+        }
+    }, [activeSessionId]);
+
+    // Start a new session (show upload UI)
+    const handleNewSession = useCallback(() => {
+        setActiveSessionId(null);
+        setFile(null);
+        setAnalysisResult(null);
+        setThreadId(null);
+        setChatMessages([]);
+        setFilename('');
+        setError(null);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    }, []);
+
+    // Delete a session from history
+    const handleDeleteSession = useCallback(async (sessionId) => {
+        try {
+            await deleteResumeSession(sessionId);
+            setAllSessions(prev => prev.filter(s => s._id !== sessionId));
+            
+            // If we deleted the active session, clear the view
+            if (sessionId === activeSessionId) {
+                handleNewSession();
+            }
+        } catch (err) {
+            console.error('Failed to delete session:', err);
+        }
+    }, [activeSessionId, handleNewSession]);
 
     const handleDragOver = useCallback((e) => {
         e.preventDefault();
@@ -369,29 +458,35 @@ const ResumeAnalyzer = () => {
 
         try {
             const userId = session?.user?.id || 'anonymous';
-            console.log('Uploading with userId:', userId, 'session:', session);
             const result = await uploadResume(file, userId);
-            console.log('Upload result:', result);
-            setAnalysisResult(result);
+            
+            const newAnalysisResult = {
+                ats_score: result.ats_score,
+                ats_breakdown: result.ats_breakdown,
+                skills_found: result.skills_found,
+                action_verbs_found: result.action_verbs_found,
+                suggestions: result.suggestions,
+            };
+            
+            setAnalysisResult(newAnalysisResult);
             setThreadId(result.thread_id);
             setFilename(file.name);
-            setChatMessages([]); // Reset chat for new resume
+            setChatMessages([]);
 
-            // Save session to MongoDB
-            await saveResumeSession({
+            // Create new session in MongoDB
+            const newSession = await createResumeSession({
                 threadId: result.thread_id,
                 filename: file.name,
-                analysisResult: {
-                    ats_score: result.ats_score,
-                    ats_breakdown: result.ats_breakdown,
-                    skills_found: result.skills_found,
-                    action_verbs_found: result.action_verbs_found,
-                    suggestions: result.suggestions,
-                },
+                title: file.name.replace('.pdf', '').replace('.PDF', ''),
+                analysisResult: newAnalysisResult,
             });
+            
+            // Update history list
+            setActiveSessionId(newSession._id);
+            setAllSessions(prev => [newSession, ...prev]);
+            
         } catch (err) {
             console.error('Upload error:', err);
-            // Handle FastAPI validation errors which return an array of error objects
             let errorMessage = 'Failed to analyze resume. Please try again.';
             if (err.response?.data?.detail) {
                 const detail = err.response.data.detail;
@@ -415,11 +510,10 @@ const ResumeAnalyzer = () => {
         setIsChatLoading(true);
         try {
             // Persist user message to MongoDB
-            await persistChatMessage('user', message);
+            await persistChatMessage(threadId, 'user', message);
             
             let finalResponse = '';
             
-            // If streaming callback provided, use streaming API
             if (onStreamToken) {
                 finalResponse = await streamChatWithAgent(
                     threadId,
@@ -436,16 +530,12 @@ const ResumeAnalyzer = () => {
                     }
                 );
             } else {
-                // Fallback to non-streaming
                 const response = await chatWithAgent(threadId, message);
                 finalResponse = response.response;
             }
             
-            // Persist assistant response to MongoDB (only if non-empty)
             if (finalResponse && finalResponse.trim()) {
-                await persistChatMessage('assistant', finalResponse);
-            } else {
-                console.warn('Skipping persist: empty assistant response');
+                await persistChatMessage(threadId, 'assistant', finalResponse);
             }
             
             return finalResponse;
@@ -457,25 +547,6 @@ const ResumeAnalyzer = () => {
         }
     }, [threadId]);
 
-    const handleUploadDifferentResume = useCallback(async () => {
-        try {
-            await clearResumeSession();
-        } catch (err) {
-            console.error('Failed to clear session:', err);
-        }
-        
-        // Reset all state
-        setFile(null);
-        setAnalysisResult(null);
-        setThreadId(null);
-        setChatMessages([]);
-        setFilename('');
-        setError(null);
-        if (fileInputRef.current) {
-            fileInputRef.current.value = '';
-        }
-    }, []);
-
     // Show loading state while restoring session
     if (isRestoringSession) {
         return (
@@ -483,7 +554,7 @@ const ResumeAnalyzer = () => {
                 <ContentArea style={{ paddingTop: isNavbarVisible ? '64px' : '0' }}>
                     <Header>
                         <Title>Resume Analyzer</Title>
-                        <Subtitle>Loading your session...</Subtitle>
+                        <Subtitle>Loading your sessions...</Subtitle>
                     </Header>
                     <div className="flex justify-center">
                         <div className="w-8 h-8 border-2 border-[#667eea] border-t-transparent rounded-full animate-spin" />
@@ -503,130 +574,143 @@ const ResumeAnalyzer = () => {
                     </Subtitle>
                 </Header>
 
-                {/* Upload Section */}
-                {!analysisResult && (
-                    <UploadSection>
-                        <DropZone
-                            $isDragOver={isDragOver}
-                            onDragOver={handleDragOver}
-                            onDragLeave={handleDragLeave}
-                            onDrop={handleDrop}
-                            onClick={() => fileInputRef.current?.click()}
-                        >
-                            <HiddenInput
-                                ref={fileInputRef}
-                                type="file"
-                                accept=".pdf"
-                                onChange={handleFileSelect}
-                            />
-                            <UploadIcon
-                                animate={{ y: isDragOver ? -10 : 0 }}
-                                transition={{ duration: 0.2 }}
-                            >
-                                <FiUploadCloud size={32} />
-                            </UploadIcon>
-                            <UploadText>
-                                {isDragOver ? 'Drop your resume here' : 'Drag & drop your resume here'}
-                            </UploadText>
-                            <UploadHint>or click to browse (PDF only)</UploadHint>
-                        </DropZone>
+                <MainLayout>
+                    {/* History Panel */}
+                    <HistoryColumn>
+                        <SessionHistoryPanel
+                            sessions={allSessions}
+                            activeSessionId={activeSessionId}
+                            onSelectSession={handleLoadSession}
+                            onNewSession={handleNewSession}
+                            onDeleteSession={handleDeleteSession}
+                            isLoading={isLoadingSession}
+                        />
+                    </HistoryColumn>
 
-                        <AnimatePresence>
-                            {file && (
-                                <FilePreview
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: -10 }}
+                    <MainColumn>
+                        {/* Upload Section - Show when no active session */}
+                        {!analysisResult && (
+                            <UploadSection>
+                                <DropZone
+                                    $isDragOver={isDragOver}
+                                    onDragOver={handleDragOver}
+                                    onDragLeave={handleDragLeave}
+                                    onDrop={handleDrop}
+                                    onClick={() => fileInputRef.current?.click()}
                                 >
-                                    <FileInfo>
-                                        <FileIcon>
-                                            <FiFile size={20} />
-                                        </FileIcon>
-                                        <FileName>{file.name}</FileName>
-                                    </FileInfo>
-                                    <RemoveButton onClick={handleRemoveFile}>
-                                        <FiX size={18} />
-                                    </RemoveButton>
-                                </FilePreview>
-                            )}
-                        </AnimatePresence>
+                                    <HiddenInput
+                                        ref={fileInputRef}
+                                        type="file"
+                                        accept=".pdf"
+                                        onChange={handleFileSelect}
+                                    />
+                                    <UploadIcon
+                                        animate={{ y: isDragOver ? -10 : 0 }}
+                                        transition={{ duration: 0.2 }}
+                                    >
+                                        <FiUploadCloud size={32} />
+                                    </UploadIcon>
+                                    <UploadText>
+                                        {isDragOver ? 'Drop your resume here' : 'Drag & drop your resume here'}
+                                    </UploadText>
+                                    <UploadHint>or click to browse (PDF only)</UploadHint>
+                                </DropZone>
 
-                        <AnimatePresence>
-                            {error && (
-                                <ErrorMessage
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: -10 }}
-                                >
-                                    <FiAlertCircle size={20} />
-                                    {error}
-                                </ErrorMessage>
-                            )}
-                        </AnimatePresence>
+                                <AnimatePresence>
+                                    {file && (
+                                        <FilePreview
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: -10 }}
+                                        >
+                                            <FileInfo>
+                                                <FileIcon>
+                                                    <FiFile size={20} />
+                                                </FileIcon>
+                                                <FileName>{file.name}</FileName>
+                                            </FileInfo>
+                                            <RemoveButton onClick={handleRemoveFile}>
+                                                <FiX size={18} />
+                                            </RemoveButton>
+                                        </FilePreview>
+                                    )}
+                                </AnimatePresence>
 
-                        {file && (
-                            <div className="mt-6 flex justify-center">
-                                <SlideButton
-                                    text={isUploading ? 'Analyzing...' : 'Analyze Resume'}
-                                    icon={<HiDocumentText size={22} />}
-                                    onClick={handleUpload}
-                                    disabled={isUploading}
-                                    style={{ width: '280px', maxWidth: '100%' }}
-                                />
-                            </div>
+                                <AnimatePresence>
+                                    {error && (
+                                        <ErrorMessage
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: -10 }}
+                                        >
+                                            <FiAlertCircle size={20} />
+                                            {error}
+                                        </ErrorMessage>
+                                    )}
+                                </AnimatePresence>
+
+                                {file && (
+                                    <div className="mt-6 flex justify-center">
+                                        <SlideButton
+                                            text={isUploading ? 'Analyzing...' : 'Analyze Resume'}
+                                            icon={<HiDocumentText size={22} />}
+                                            onClick={handleUpload}
+                                            disabled={isUploading}
+                                            style={{ width: '280px', maxWidth: '100%' }}
+                                        />
+                                    </div>
+                                )}
+                            </UploadSection>
                         )}
-                    </UploadSection>
-                )}
 
-                {/* Results Section */}
-                <AnimatePresence>
-                    {analysisResult && (
-                        <ResultsSection
-                            initial={{ opacity: 0, y: 30 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.5 }}
-                        >
-                            <SuccessHeader>
-                                <SuccessMessage>
-                                    <FiCheckCircle size={20} />
-                                    {filename ? `Analyzing: ${filename}` : 'Resume analyzed successfully!'}
-                                </SuccessMessage>
-                                <NewResumeButton onClick={handleUploadDifferentResume}>
-                                    <FiRefreshCw size={16} />
-                                    Upload Different Resume
-                                </NewResumeButton>
-                            </SuccessHeader>
+                        {/* Results Section */}
+                        <AnimatePresence>
+                            {analysisResult && (
+                                <ResultsSection
+                                    initial={{ opacity: 0, y: 30 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.5 }}
+                                >
+                                    <SuccessHeader>
+                                        <SuccessMessage>
+                                            <FiCheckCircle size={20} />
+                                            {filename ? `Analyzing: ${filename}` : 'Resume analyzed successfully!'}
+                                        </SuccessMessage>
+                                        <NewResumeButton onClick={handleNewSession}>
+                                            <FiRefreshCw size={16} />
+                                            New Analysis
+                                        </NewResumeButton>
+                                    </SuccessHeader>
 
-                            <ResultsGrid>
-                                {/* ATS Score Card */}
-                                <ATSScoreCard
-                                    score={analysisResult.ats_score}
-                                    breakdown={analysisResult.ats_breakdown}
-                                />
+                                    <ResultsGrid>
+                                        <ATSScoreCard
+                                            score={analysisResult.ats_score}
+                                            breakdown={analysisResult.ats_breakdown}
+                                        />
 
-                                {/* Suggestions Panel */}
-                                <SuggestionsPanel
-                                    suggestions={analysisResult.suggestions}
-                                    skillsFound={analysisResult.skills_found}
-                                    actionVerbsFound={analysisResult.action_verbs_found}
-                                />
+                                        <SuggestionsPanel
+                                            suggestions={analysisResult.suggestions}
+                                            skillsFound={analysisResult.skills_found}
+                                            actionVerbsFound={analysisResult.action_verbs_found}
+                                        />
 
-                                {/* Chat Interface */}
-                                <ResumeChat
-                                    threadId={threadId}
-                                    onSendMessage={handleSendMessage}
-                                    isLoading={isChatLoading}
-                                    initialMessages={chatMessages}
-                                />
-                            </ResultsGrid>
-                        </ResultsSection>
-                    )}
-                </AnimatePresence>
+                                        <ResumeChat
+                                            threadId={threadId}
+                                            onSendMessage={handleSendMessage}
+                                            isLoading={isChatLoading}
+                                            initialMessages={chatMessages}
+                                        />
+                                    </ResultsGrid>
+                                </ResultsSection>
+                            )}
+                        </AnimatePresence>
+                    </MainColumn>
+                </MainLayout>
             </ContentArea>
 
             {/* Loading Overlay */}
             <AnimatePresence>
-                {isUploading && (
+                {(isUploading || isLoadingSession) && (
                     <LoadingOverlay
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
@@ -636,7 +720,9 @@ const ResumeAnalyzer = () => {
                             animate={{ rotate: 360 }}
                             transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
                         />
-                        <LoadingText>Analyzing your resume with AI...</LoadingText>
+                        <LoadingText>
+                            {isUploading ? 'Analyzing your resume with AI...' : 'Loading session...'}
+                        </LoadingText>
                     </LoadingOverlay>
                 )}
             </AnimatePresence>
