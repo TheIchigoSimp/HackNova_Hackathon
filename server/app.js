@@ -62,7 +62,10 @@ app.use(
 app.use(
   cors({
     origin: [constants?.clientUrl,
-      'https://pathgenie-client.onrender.com'
+      'https://pathgenie-client.onrender.com',
+      'https://pathgenie-resume.onrender.com',
+      'http://localhost:5173',
+      'http://localhost:8001'
     ],
     allowedHeaders: ['Content-Type', 'Authorization'],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH', 'HEAD'],
