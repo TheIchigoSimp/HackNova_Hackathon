@@ -28,6 +28,7 @@
     "motion": "^12.15.0",
     "prop-types": "^15.8.1",
     "react": "^19.1.0",
+    "react-countup": "^6.5.3",
     "react-dom": "^19.1.0",
     "react-draggable": "^4.4.6",
     "react-error-boundary": "^6.0.0",

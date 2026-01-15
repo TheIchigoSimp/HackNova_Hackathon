@@ -167,6 +167,9 @@ const AuthForm = ({ isLogin = false }) => {
               fullWidth={false}
             />
           </div>
+          <p className="text-xs text-[#64748b] mt-2">
+            Password must be at least 8 characters long
+          </p>
         </>
       )}
 

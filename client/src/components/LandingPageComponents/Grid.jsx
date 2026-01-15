@@ -27,9 +27,9 @@ const Grid = () => {
           );
         })}
       </BentoGrid>
-      <div className="flex flex-row items-center justify-center mb-1 w-full mt-10">
+      {/* <div className="flex flex-row items-center justify-center mb-1 w-full mt-10">
           <AnimatedTooltip items={people} />
-        </div>
+        </div> */}
     </section>
   );
 };

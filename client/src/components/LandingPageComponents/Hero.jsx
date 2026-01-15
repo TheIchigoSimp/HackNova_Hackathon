@@ -2,17 +2,20 @@ import { cn } from "../lib/utils";
 import { TextGenerateEffect } from "../ui/text-generate-effect";
 import SlideButton from "../Buttons/SlideButton";
 import { GiMagicLamp } from "react-icons/gi";
+import { FiPlay } from "react-icons/fi";
+import { motion } from "framer-motion";
 
 /**
  * The Hero component is the first thing users see when they visit the homepage.
- * It contains the logo, a tagline, and a button to start the magic.
- *
- * @returns {JSX.Element} The Hero component.
- * @constructor
+ * It contains the logo, a tagline, and CTAs.
  */
 const Hero = () => {
+  const scrollToFeatures = () => {
+    document.getElementById('info')?.scrollIntoView({ behavior: 'smooth' });
+  };
+
   return (
-    <div className="pb-24 pt-[80px]">
+    <div className="pb-16 pt-[80px] relative z-10">
       {/* Subtle grid background */}
       <div
         className={cn(
@@ -28,40 +31,61 @@ const Hero = () => {
       <div className="flex justify-center align-middle">
         <div className="max-w-[100vw] relative z-10">
           {/* Logo with glow effect */}
-          <div className="relative">
+          <motion.div 
+            className="relative"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+          >
             <div className="absolute inset-0 blur-3xl bg-gradient-to-r from-[#667eea]/20 via-[#764ba2]/20 to-[#f093fb]/20 rounded-full scale-150" />
             <img
               src="/logo2.png"
               alt="Pathgenie"
               className="relative w-[200px] m-auto drop-shadow-2xl"
             />
-          </div>
+          </motion.div>
 
           <TextGenerateEffect
             className="text-center md:text-5xl lg:text-6xl mt-6"
             words="Start Your Journey With PathGenie"
           />
 
-          <p className="relative z-20 text-center text-lg md:text-xl mt-6 mb-2">
+          <motion.p 
+            className="relative z-20 text-center text-lg md:text-xl mt-6 mb-2"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5 }}
+          >
             <span className="bg-gradient-to-r from-[#94a3b8] via-[#e2e8f0] to-[#94a3b8] bg-clip-text text-transparent font-medium italic">
               Define Your Path, Achieve Your Goals!
             </span>
-          </p>
+          </motion.p>
 
-          <p className="relative z-20 text-center text-sm md:text-base text-[#667eea] font-semibold tracking-wide uppercase">
+          <motion.p 
+            className="relative z-20 text-center text-sm md:text-base text-[#667eea] font-semibold tracking-wide uppercase"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.6 }}
+          >
             ✨ Powered by Generative AI
-          </p>
+          </motion.p>
 
-          <div className="flex justify-center mt-10">
+          {/* CTA Button */}
+          <motion.div 
+            className="flex justify-center mt-10"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.7 }}
+          >
             <SlideButton
               text="Start Magic"
               icon={<GiMagicLamp size={26} />}
               type="button"
-              style={{ width: "100vw", maxWidth: "260px" }}
+              style={{ width: "100vw", maxWidth: "220px" }}
               fullWidth={true}
               onClick={() => (window.location.href = "/register")}
             />
-          </div>
+          </motion.div>
         </div>
       </div>
     </div>
@@ -69,3 +93,5 @@ const Hero = () => {
 };
 
 export default Hero;
+
+

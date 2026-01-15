@@ -115,15 +115,18 @@ Handled by Better Auth library automatically.
 | GET | `/api/user/profile` | Get user profile |
 | PUT | `/api/user/profile` | Update user profile |
 
-### Resume Sessions (`/api/resume-sessions/*`)
+### Resume Sessions (`/api/resume-session/*`)
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/resume-sessions` | Get all sessions |
-| GET | `/api/resume-sessions/:id` | Get specific session |
-| POST | `/api/resume-sessions` | Create new session |
-| PUT | `/api/resume-sessions/:id` | Update session |
-| DELETE | `/api/resume-sessions/:id` | Delete session |
+| GET | `/api/resume-session/all` | Get all sessions (history) |
+| GET | `/api/resume-session/current` | Get most recent session |
+| GET | `/api/resume-session/:id` | Get specific session |
+| POST | `/api/resume-session` | Create new session |
+| PUT | `/api/resume-session/:id` | Update session |
+| POST | `/api/resume-session/chat` | Add chat message |
+| DELETE | `/api/resume-session/:id` | Delete session |
+| DELETE | `/api/resume-session` | Clear all sessions |
 
 ---
 

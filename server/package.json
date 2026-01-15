@@ -34,6 +34,7 @@
     "docx": "^9.5.0",
     "dotenv": "^16.6.1",
     "express": "^4.19.2",
+    "express-rate-limit": "^8.2.1",
     "groq-sdk": "^0.37.0",
     "jsonwebtoken": "^9.0.2",
     "markdown-it": "^14.1.0",

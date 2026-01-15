@@ -55,12 +55,12 @@ def _reconstruct_retriever(thread_id: str) -> Optional[Any]:
     embeddings = _get_embeddings()
     
     # Create vector store from existing collection
-    # Note: embedding_key must match your Atlas Search index path ("embeddings")
+    # Note: embedding_key must match your Atlas Search index path ("embedding")
     vector_store = MongoDBAtlasVectorSearch(
         collection=collection,
         embedding=embeddings,
         index_name="vector_index",
-        embedding_key="embeddings",  # Match your Atlas index field name
+        embedding_key="embedding",  # Match your Atlas index field name
     )
     
     # Create retriever with thread_id pre-filter
@@ -164,7 +164,7 @@ def ingest_resume_pdf(
             embedding=embeddings,
             collection=collection,
             index_name="vector_index",
-            embedding_key="embeddings",  # Match your Atlas index field name
+            embedding_key="embedding",  # Match your Atlas index field name
         )
         
         # Create and cache retriever with thread_id pre-filter

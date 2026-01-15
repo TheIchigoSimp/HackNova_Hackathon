@@ -24,6 +24,7 @@ client/
 │   │   ├── ResumeAgent/        # Resume analysis UI
 │   │   │   ├── ChatPanel.jsx   # AI chat interface
 │   │   │   ├── SuggestionsPanel.jsx
+│   │   │   ├── SessionHistoryPanel.jsx  # Session history sidebar
 │   │   │   └── UploadSection.jsx
 │   │   ├── CustomNode.jsx      # React Flow custom node
 │   │   ├── FlowComponent.jsx   # React Flow wrapper

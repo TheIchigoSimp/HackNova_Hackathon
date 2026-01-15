@@ -1,24 +1,58 @@
 import React, { useState, useRef, useEffect } from 'react';
-import styled, { css } from 'styled-components';
+import styled, { css, keyframes } from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiSend, FiUser, FiCpu, FiMaximize2, FiMinimize2, FiX } from 'react-icons/fi';
+import { FiSend, FiUser, FiCpu, FiMaximize2, FiMinimize2, FiX, FiZap } from 'react-icons/fi';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
+// Animations
+const float = keyframes`
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+`;
+
+const glow = keyframes`
+  0%, 100% { box-shadow: 0 0 20px rgba(102, 126, 234, 0.2); }
+  50% { box-shadow: 0 0 30px rgba(102, 126, 234, 0.4); }
+`;
+
 // Shared styles for both modes
 const baseContainerStyles = css`
-  background: linear-gradient(135deg, rgba(25, 25, 40, 0.95) 0%, rgba(15, 15, 25, 0.98) 100%);
-  border: 1px solid rgba(102, 126, 234, 0.15);
-  border-radius: 16px;
-  backdrop-filter: blur(20px);
+  background: linear-gradient(135deg, rgba(25, 25, 40, 0.9) 0%, rgba(15, 15, 25, 0.95) 100%);
+  border: 1px solid rgba(102, 126, 234, 0.2);
+  border-radius: 20px;
+  backdrop-filter: blur(24px);
   display: flex;
   flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  
+  /* Glassmorphism top highlight */
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+  }
+  
+  /* Subtle inner glow */
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 20px;
+    background: radial-gradient(ellipse at top, rgba(102, 126, 234, 0.05) 0%, transparent 50%);
+    pointer-events: none;
+  }
 `;
 
 const Container = styled(motion.div)`
   ${baseContainerStyles}
-  height: 500px;
-  max-height: 500px;
+  height: 520px;
+  max-height: 520px;
 `;
 
 // Fullscreen overlay
@@ -26,7 +60,7 @@ const FullscreenOverlay = styled(motion.div)`
   position: fixed;
   inset: 0;
   background: rgba(10, 10, 15, 0.9);
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(12px);
   z-index: 1000;
   display: flex;
   align-items: center;
@@ -40,24 +74,39 @@ const ExpandedContainer = styled(motion.div)`
   max-width: 900px;
   height: 90vh;
   max-height: 90vh;
+  animation: ${glow} 3s ease-in-out infinite;
 `;
 
 const Header = styled.div`
-  padding: 16px 20px;
+  padding: 18px 22px;
   border-bottom: 1px solid rgba(102, 126, 234, 0.1);
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  background: rgba(102, 126, 234, 0.02);
+  position: relative;
+  z-index: 1;
 `;
 
 const Title = styled.h3`
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 600;
   color: #f8fafc;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+`;
+
+const TitleIcon = styled.span`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
+  border-radius: 10px;
+  color: #667eea;
 `;
 
 const HeaderActions = styled.div`
@@ -69,11 +118,11 @@ const IconButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   background: rgba(102, 126, 234, 0.1);
   border: 1px solid rgba(102, 126, 234, 0.2);
-  border-radius: 8px;
+  border-radius: 10px;
   color: #a78bfa;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -82,20 +131,63 @@ const IconButton = styled.button`
     background: rgba(102, 126, 234, 0.2);
     border-color: rgba(102, 126, 234, 0.4);
     color: #c4b5fd;
+    transform: scale(1.05);
+  }
+`;
+
+const QuickActions = styled.div`
+  display: flex;
+  gap: 8px;
+  padding: 12px 18px;
+  overflow-x: auto;
+  flex-shrink: 0;
+  border-bottom: 1px solid rgba(102, 126, 234, 0.08);
+  
+  &::-webkit-scrollbar {
+    display: none;
+  }
+`;
+
+const QuickActionChip = styled(motion.button)`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: rgba(102, 126, 234, 0.08);
+  border: 1px solid rgba(102, 126, 234, 0.15);
+  border-radius: 20px;
+  color: #94a3b8;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background: rgba(102, 126, 234, 0.15);
+    border-color: rgba(102, 126, 234, 0.3);
+    color: #a78bfa;
+    transform: translateY(-1px);
+  }
+  
+  svg {
+    color: #667eea;
   }
 `;
 
 const MessagesContainer = styled.div`
   flex: 1;
   overflow-y: auto;
-  padding: 16px;
+  padding: 18px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
   min-height: 0;
+  position: relative;
+  z-index: 1;
 
   &::-webkit-scrollbar {
-    width: 6px;
+    width: 5px;
   }
 
   &::-webkit-scrollbar-track {
@@ -115,38 +207,40 @@ const MessagesContainer = styled.div`
 
 const MessageBubble = styled(motion.div)`
   max-width: ${props => props.$expanded ? '70%' : '85%'};
-  padding: ${props => props.$expanded ? '16px 20px' : '12px 16px'};
-  border-radius: 16px;
-  font-size: ${props => props.$expanded ? '1rem' : '0.875rem'};
-  line-height: 1.6;
+  padding: ${props => props.$expanded ? '16px 20px' : '14px 18px'};
+  border-radius: 18px;
+  font-size: ${props => props.$expanded ? '0.95rem' : '0.875rem'};
+  line-height: 1.65;
   
   ${props => props.$isUser ? `
     align-self: flex-end;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
-    border-bottom-right-radius: 4px;
+    border-bottom-right-radius: 6px;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
   ` : `
     align-self: flex-start;
-    background: rgba(102, 126, 234, 0.1);
-    border: 1px solid rgba(102, 126, 234, 0.15);
+    background: rgba(102, 126, 234, 0.08);
+    border: 1px solid rgba(102, 126, 234, 0.12);
     color: #e2e8f0;
-    border-bottom-left-radius: 4px;
+    border-bottom-left-radius: 6px;
   `}
 `;
 
 const MessageHeader = styled.div`
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-bottom: 6px;
-  font-size: ${props => props.$expanded ? '0.85rem' : '0.75rem'};
-  opacity: 0.8;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: ${props => props.$expanded ? '0.8rem' : '0.7rem'};
+  opacity: 0.75;
+  font-weight: 500;
 `;
 
 // Styled markdown content for assistant messages
 const MarkdownContent = styled.div`
   p {
-    margin: 0 0 0.5em 0;
+    margin: 0 0 0.6em 0;
     &:last-child {
       margin-bottom: 0;
     }
@@ -158,27 +252,30 @@ const MarkdownContent = styled.div`
   }
   
   li {
-    margin: 0.25em 0;
+    margin: 0.3em 0;
   }
   
   code {
-    background: rgba(0, 0, 0, 0.3);
-    padding: 0.15em 0.4em;
-    border-radius: 4px;
-    font-family: 'Fira Code', 'Consolas', monospace;
+    background: rgba(0, 0, 0, 0.35);
+    padding: 0.2em 0.5em;
+    border-radius: 6px;
+    font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
     font-size: 0.85em;
+    color: #c4b5fd;
   }
   
   pre {
-    background: rgba(0, 0, 0, 0.4);
-    padding: 12px;
-    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.45);
+    padding: 14px;
+    border-radius: 10px;
     overflow-x: auto;
-    margin: 0.5em 0;
+    margin: 0.6em 0;
+    border: 1px solid rgba(102, 126, 234, 0.15);
     
     code {
       background: transparent;
       padding: 0;
+      color: #e2e8f0;
     }
   }
   
@@ -200,9 +297,9 @@ const MarkdownContent = styled.div`
     }
   }
   
-  h1 { font-size: 1.25em; }
-  h2 { font-size: 1.15em; }
-  h3 { font-size: 1.05em; }
+  h1 { font-size: 1.2em; }
+  h2 { font-size: 1.1em; }
+  h3 { font-size: 1em; }
   
   a {
     color: #a78bfa;
@@ -214,7 +311,7 @@ const MarkdownContent = styled.div`
   
   blockquote {
     border-left: 3px solid rgba(102, 126, 234, 0.5);
-    padding-left: 12px;
+    padding-left: 14px;
     margin: 0.5em 0;
     opacity: 0.9;
   }
@@ -227,21 +324,24 @@ const MarkdownContent = styled.div`
   }
   
   th, td {
-    border: 1px solid rgba(102, 126, 234, 0.3);
-    padding: 8px 12px;
+    border: 1px solid rgba(102, 126, 234, 0.25);
+    padding: 10px 14px;
     text-align: left;
   }
   
   th {
-    background: rgba(102, 126, 234, 0.15);
+    background: rgba(102, 126, 234, 0.12);
     font-weight: 600;
   }
 `;
 
 const InputContainer = styled.div`
-  padding: 16px;
+  padding: 16px 18px;
   border-top: 1px solid rgba(102, 126, 234, 0.1);
   flex-shrink: 0;
+  background: rgba(102, 126, 234, 0.02);
+  position: relative;
+  z-index: 1;
 `;
 
 const InputWrapper = styled.div`
@@ -252,10 +352,10 @@ const InputWrapper = styled.div`
 
 const Input = styled.input`
   flex: 1;
-  padding: 12px 16px;
-  background: rgba(25, 25, 40, 0.6);
+  padding: 14px 18px;
+  background: rgba(25, 25, 40, 0.7);
   border: 1px solid rgba(102, 126, 234, 0.15);
-  border-radius: 12px;
+  border-radius: 14px;
   color: #f8fafc;
   font-size: 0.875rem;
   transition: all 0.3s ease;
@@ -266,8 +366,9 @@ const Input = styled.input`
 
   &:focus {
     outline: none;
-    border-color: rgba(102, 126, 234, 0.4);
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    border-color: rgba(102, 126, 234, 0.5);
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+    background: rgba(25, 25, 40, 0.9);
   }
 
   &:disabled {
@@ -280,11 +381,11 @@ const SendButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border: none;
-  border-radius: 12px;
+  border-radius: 14px;
   color: white;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -292,7 +393,7 @@ const SendButton = styled.button`
 
   &:hover:not(:disabled) {
     transform: scale(1.05);
-    box-shadow: 0 0 20px rgba(102, 126, 234, 0.4);
+    box-shadow: 0 0 25px rgba(102, 126, 234, 0.5);
   }
 
   &:active:not(:disabled) {
@@ -308,19 +409,19 @@ const SendButton = styled.button`
 const TypingIndicator = styled(motion.div)`
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 12px 16px;
-  background: rgba(102, 126, 234, 0.1);
-  border: 1px solid rgba(102, 126, 234, 0.15);
-  border-radius: 16px;
-  border-bottom-left-radius: 4px;
+  gap: 5px;
+  padding: 14px 18px;
+  background: rgba(102, 126, 234, 0.08);
+  border: 1px solid rgba(102, 126, 234, 0.12);
+  border-radius: 18px;
+  border-bottom-left-radius: 6px;
   align-self: flex-start;
 `;
 
 const TypingDot = styled(motion.span)`
-  width: 6px;
-  height: 6px;
-  background: #667eea;
+  width: 7px;
+  height: 7px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
   border-radius: 50%;
 `;
 
@@ -335,31 +436,39 @@ const EmptyState = styled.div`
   color: #64748b;
 `;
 
-const EmptyIcon = styled.div`
-  width: 64px;
-  height: 64px;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
-  border-radius: 16px;
+const EmptyIcon = styled(motion.div)`
+  width: 72px;
+  height: 72px;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.1) 100%);
+  border-radius: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 16px;
+  margin-bottom: 18px;
   color: #667eea;
+  animation: ${float} 3s ease-in-out infinite;
 `;
 
 const PlaceholderContainer = styled.div`
   ${baseContainerStyles}
-  height: 500px;
-  max-height: 500px;
+  height: 520px;
+  max-height: 520px;
   opacity: 0.3;
   pointer-events: none;
 `;
+
+const QUICK_ACTIONS = [
+    { label: 'Key strengths', prompt: 'What are my key strengths based on this resume?' },
+    { label: 'Improve experience', prompt: 'How can I improve my experience section?' },
+    { label: 'ATS tips', prompt: 'What ATS optimization tips do you have for my resume?' },
+    { label: 'Missing skills', prompt: 'What important skills might be missing from my resume?' },
+];
 
 /**
  * ResumeChat Component
  * 
  * Chat interface for the resume agent with markdown rendering, 
- * expand/minimize functionality, and persistence support.
+ * expand/minimize functionality, quick actions, and persistence support.
  */
 const ResumeChat = ({ threadId, onSendMessage, isLoading, initialMessages = [], onMessagesChange }) => {
     const [messages, setMessages] = useState(initialMessages);
@@ -369,11 +478,9 @@ const ResumeChat = ({ threadId, onSendMessage, isLoading, initialMessages = [], 
     const messagesContainerRef = useRef(null);
     const expandedMessagesContainerRef = useRef(null);
 
-    // Restore initial messages when they change
+    // Sync messages with initialMessages when they change (e.g., session switch)
     useEffect(() => {
-        if (initialMessages.length > 0 && messages.length === 0) {
-            setMessages(initialMessages);
-        }
+        setMessages(initialMessages);
     }, [initialMessages]);
 
     const scrollToBottom = () => {
@@ -405,27 +512,25 @@ const ResumeChat = ({ threadId, onSendMessage, isLoading, initialMessages = [], 
         return () => window.removeEventListener('keydown', handleEscape);
     }, [isExpanded]);
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        if (!inputValue.trim() || isLoading || !threadId) return;
+    const handleSubmit = async (e, customMessage = null) => {
+        if (e) e.preventDefault();
+        const messageToSend = customMessage || inputValue.trim();
+        if (!messageToSend || isLoading || !threadId) return;
 
-        const userMessage = inputValue.trim();
         setInputValue('');
 
         // Add user message
-        const newUserMsg = { role: 'user', content: userMessage };
+        const newUserMsg = { role: 'user', content: messageToSend };
         setMessages(prev => [...prev, newUserMsg]);
 
         // Add placeholder for streaming assistant response
-        const streamingMsgIndex = messages.length + 1; // Account for the user message we just added
         setMessages(prev => [...prev, { role: 'assistant', content: '', isStreaming: true }]);
 
         try {
             // Use streaming callback to update message in real-time
-            const response = await onSendMessage(userMessage, (token, fullText) => {
+            const response = await onSendMessage(messageToSend, (token, fullText) => {
                 setMessages(prev => {
                     const updated = [...prev];
-                    // Update the last message (the streaming one)
                     if (updated.length > 0) {
                         updated[updated.length - 1] = {
                             role: 'assistant',
@@ -435,7 +540,6 @@ const ResumeChat = ({ threadId, onSendMessage, isLoading, initialMessages = [], 
                     }
                     return updated;
                 });
-                // Scroll to bottom on each token
                 scrollToBottom();
             });
 
@@ -452,7 +556,6 @@ const ResumeChat = ({ threadId, onSendMessage, isLoading, initialMessages = [], 
                 return updated;
             });
         } catch (error) {
-            // Update the streaming message to show error
             setMessages(prev => {
                 const updated = [...prev];
                 if (updated.length > 0 && updated[updated.length - 1].isStreaming) {
@@ -474,6 +577,10 @@ const ResumeChat = ({ threadId, onSendMessage, isLoading, initialMessages = [], 
         }
     };
 
+    const handleQuickAction = (prompt) => {
+        handleSubmit(null, prompt);
+    };
+
     const renderMessageContent = (message) => {
         if (message.role === 'assistant') {
             return (
@@ -487,18 +594,38 @@ const ResumeChat = ({ threadId, onSendMessage, isLoading, initialMessages = [], 
         return message.content;
     };
 
+    const renderQuickActions = () => (
+        <QuickActions>
+            {QUICK_ACTIONS.map((action, index) => (
+                <QuickActionChip
+                    key={action.label}
+                    onClick={() => handleQuickAction(action.prompt)}
+                    disabled={isLoading || !threadId}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                >
+                    <FiZap size={12} />
+                    {action.label}
+                </QuickActionChip>
+            ))}
+        </QuickActions>
+    );
+
     const renderMessages = (expanded, containerRef) => (
         <MessagesContainer ref={containerRef}>
             {messages.length === 0 ? (
                 <EmptyState>
                     <EmptyIcon>
-                        <FiCpu size={28} />
+                        <FiCpu size={32} />
                     </EmptyIcon>
-                    <p className="text-sm">
+                    <p className="text-sm font-medium text-slate-300">
                         Ask me anything about your resume!
                     </p>
-                    <p className="text-xs mt-2 text-[#94a3b8]">
-                        Try: "What are my key strengths?" or "How can I improve my experience section?"
+                    <p className="text-xs mt-2 text-slate-500 max-w-xs">
+                        I can help you improve your resume, explain ATS scores, and suggest optimizations.
                     </p>
                 </EmptyState>
             ) : (
@@ -513,7 +640,7 @@ const ResumeChat = ({ threadId, onSendMessage, isLoading, initialMessages = [], 
                             transition={{ duration: 0.2 }}
                         >
                             <MessageHeader $expanded={expanded}>
-                                {message.role === 'user' ? <FiUser size={12} /> : <FiCpu size={12} />}
+                                {message.role === 'user' ? <FiUser size={13} /> : <FiCpu size={13} />}
                                 {message.role === 'user' ? 'You' : 'Resume Agent'}
                             </MessageHeader>
                             {renderMessageContent(message)}
@@ -560,7 +687,7 @@ const ResumeChat = ({ threadId, onSendMessage, isLoading, initialMessages = [], 
                     onClick={handleSubmit}
                     disabled={!threadId || !inputValue.trim() || isLoading}
                 >
-                    <FiSend size={18} />
+                    <FiSend size={20} />
                 </SendButton>
             </InputWrapper>
         </InputContainer>
@@ -577,7 +704,9 @@ const ResumeChat = ({ threadId, onSendMessage, isLoading, initialMessages = [], 
                 >
                     <Header>
                         <Title>
-                            <FiCpu className="text-[#667eea]" />
+                            <TitleIcon>
+                                <FiCpu size={18} />
+                            </TitleIcon>
                             Chat with Resume Agent
                         </Title>
                         <HeaderActions>
@@ -586,6 +715,7 @@ const ResumeChat = ({ threadId, onSendMessage, isLoading, initialMessages = [], 
                             </IconButton>
                         </HeaderActions>
                     </Header>
+                    {messages.length === 0 && renderQuickActions()}
                     {renderMessages(false, messagesContainerRef)}
                     {renderInput()}
                 </Container>
@@ -596,7 +726,9 @@ const ResumeChat = ({ threadId, onSendMessage, isLoading, initialMessages = [], 
                 <PlaceholderContainer>
                     <Header>
                         <Title>
-                            <FiCpu className="text-[#667eea]" />
+                            <TitleIcon>
+                                <FiCpu size={18} />
+                            </TitleIcon>
                             Chat with Resume Agent
                         </Title>
                     </Header>
@@ -626,7 +758,9 @@ const ResumeChat = ({ threadId, onSendMessage, isLoading, initialMessages = [], 
                         >
                             <Header>
                                 <Title>
-                                    <FiCpu className="text-[#667eea]" />
+                                    <TitleIcon>
+                                        <FiCpu size={18} />
+                                    </TitleIcon>
                                     Chat with Resume Agent
                                 </Title>
                                 <HeaderActions>
@@ -638,6 +772,7 @@ const ResumeChat = ({ threadId, onSendMessage, isLoading, initialMessages = [], 
                                     </IconButton>
                                 </HeaderActions>
                             </Header>
+                            {messages.length === 0 && renderQuickActions()}
                             {renderMessages(true, expandedMessagesContainerRef)}
                             {renderInput()}
                         </ExpandedContainer>
