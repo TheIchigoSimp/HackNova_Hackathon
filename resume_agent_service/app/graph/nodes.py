@@ -20,7 +20,7 @@ settings = get_settings()
 logger = logging.getLogger("resume_agent.nodes")
 
 # Initialize LLM with Google Gemini
-llm = ChatGoogleGenerativeAI(model="gemini-3.0-experimental")
+llm = ChatGoogleGenerativeAI(model="gemini-3-flash-preview")
 llm_with_tools = llm.bind_tools(tools)
 
 
