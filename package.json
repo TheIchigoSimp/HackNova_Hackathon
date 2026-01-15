@@ -9,7 +9,8 @@
     "start:server": "cd server && node index.js",
     "build": "npm run build:client",
     "start": "npm run start:server",
-    "deploy": "npm run install:all && npm run build && npm run start"
+    "deploy": "npm run install:all && npm run build && npm run start",
+    "agent": "cd ./resume_agent_service && pip install -r requirements.txt && uvicorn app.main:app --reload --port 8001"
   },
   "bugs": {
     "url": "https://github.com/prathmbavge/PathGenie/issues"
