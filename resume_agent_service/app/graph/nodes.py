@@ -4,7 +4,7 @@ import logging
 import traceback
 
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
-from langchain_groq import ChatGroq
+from langchain_google_genai import ChatGoogleGenerativeAI
 from dotenv import load_dotenv
 
 from app.core.config import get_settings
@@ -19,8 +19,8 @@ settings = get_settings()
 # Configure logging
 logger = logging.getLogger("resume_agent.nodes")
 
-# Initialize LLM
-llm = ChatGroq(model="openai/gpt-oss-120b")
+# Initialize LLM with Google Gemini
+llm = ChatGoogleGenerativeAI(model="gemini-3.0-experimental")
 llm_with_tools = llm.bind_tools(tools)
 
 
