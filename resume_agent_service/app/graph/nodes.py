@@ -135,7 +135,7 @@ RESPONSE LENGTH GUIDE:
 - "Why is my ATS score low?" → Quick summary + 2-3 key points
 - "Give me detailed feedback" → Full analysis with bullets
 
-Always synthesize tool results into natural language. Never expose raw data."""
+Never expose raw data."""
 
     system_message = SystemMessage(content=system_prompt)
     messages = [system_message, *state["messages"]]
