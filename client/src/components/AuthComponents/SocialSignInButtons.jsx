@@ -2,7 +2,7 @@
 import React, { useCallback } from "react";
 import PropTypes from "prop-types";
 import SlideButton from "../Buttons/SlideButton";
-import { FaGoogle, FaGithub } from "react-icons/fa";
+import { FaGoogle } from "react-icons/fa";
 import { userSocialSignOn } from "../../api/authApi";
 
 const SocialSignInButtons = ({ setError }) => {
@@ -21,12 +21,12 @@ const SocialSignInButtons = ({ setError }) => {
         onClick={() => handleSocialSignIn("google")}
         style={{ width: "220px", maxWidth: "100%" }}
       />
-      <SlideButton
+      {/* <SlideButton
         text="GitHub"
         icon={<FaGithub className="text-white" />}
         onClick={() => handleSocialSignIn("github")}
         style={{ width: "220px", maxWidth: "100%" }}
-      />
+      /> */}
     </div>
   );
 };
