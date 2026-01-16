@@ -26,6 +26,17 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Helper function to sanitize filenames for HTTP headers
+const sanitizeFilename = (filename) => {
+    // Remove or replace invalid characters for HTTP headers and file systems
+    // Keep only alphanumeric, spaces, hyphens, underscores, and common punctuation
+    return filename
+        .replace(/[^\w\s\-_.()]/g, '') // Remove invalid characters
+        .replace(/\s+/g, '_')          // Replace spaces with underscores
+        .substring(0, 100)             // Limit length to avoid issues
+        || 'download';                 // Fallback if empty
+};
+
 
 // Utility: Download an image URL to a temporary file
 // async function downloadImageToTemp(url) {
@@ -158,9 +169,8 @@ const downloadResources = asyncHandler(async (req, res) => {
         tags: mindmap.tags.join(', ') || 'None',
     };
 
-    const fileBase = `${nodeData.label}`;
+    const fileBase = sanitizeFilename(nodeData.label);
     const pdfFileName = `${fileBase}.pdf`;
-
     if (format === 'pdf') {
         // ─────────────── PDF Branch ───────────────
         res.set({
@@ -1109,7 +1119,7 @@ const downloadResources = asyncHandler(async (req, res) => {
     });
 
     const buffer = await Packer.toBuffer(docx);
-    const fileName = `${nodeData.label}.docx`;
+    const fileName = `${sanitizeFilename(nodeData.label)}.docx`;
     res.set({
         'Content-Type':
             'application/vnd.openxmlformats-officedocument.wordprocessingml.document',

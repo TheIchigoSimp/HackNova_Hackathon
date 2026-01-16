@@ -1,5 +1,5 @@
 
-# Path Genie
+# Path Genie by VibeCoders
 
 Welcome to  **Path Genie** ! 🎉 Your ultimate companion for creating personalized learning journeys. Whether you're diving into "Learn Python Programming" or exploring "Quantum Physics," Path Genie transforms your topic of interest into a vibrant, interactive learning path. Using the magic of  **React Flow** , we visualize your learning milestones, and with the power of  **Google Gemini AI** , we fetch top-notch resources like YouTube videos, blogs, and articles to supercharge your learning experience. Let's embark on this adventure together! 🚀
 

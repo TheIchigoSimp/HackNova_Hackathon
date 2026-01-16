@@ -313,7 +313,7 @@ const DrawerContent = memo(({ content, onClose, setLoading, nodeId }) => {
               </div>
             </AccordionSection>
           )}
-           //Hiding Images due to perplexity cannot provide image URLs
+          {/* //Hiding Images due to perplexity cannot provide image URLs */}
           {/* {content.images?.length > 0 && (
             <AccordionSection
               title="Images"
@@ -347,7 +347,7 @@ const DrawerContent = memo(({ content, onClose, setLoading, nodeId }) => {
             </AccordionSection>
           )} */}
 
-          {content.videos?.length > 0 && (
+          {/* {content.videos?.length > 0 && (
             <AccordionSection
               title="Videos"
               icon={<FiFilm className="w-5 text-neon-blue" />}
@@ -380,7 +380,7 @@ const DrawerContent = memo(({ content, onClose, setLoading, nodeId }) => {
                 Full Screen <FaExpand className="inline-block h-5 w-5" />
               </button>
             </AccordionSection>
-          )}
+          )} */}
         </div>
       </motion.aside>
 
