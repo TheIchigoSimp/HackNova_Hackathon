@@ -4,7 +4,7 @@ import logging
 import traceback
 
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
-from langchain_groq import ChatGroq
+from langchain_google_genai import ChatGoogleGenerativeAI
 from dotenv import load_dotenv
 
 from app.core.config import get_settings
@@ -19,8 +19,8 @@ settings = get_settings()
 # Configure logging
 logger = logging.getLogger("resume_agent.nodes")
 
-# Initialize LLM
-llm = ChatGroq(model="openai/gpt-oss-120b")
+# Initialize LLM with Google Gemini
+llm = ChatGoogleGenerativeAI(model="gemini-3-flash-preview")
 llm_with_tools = llm.bind_tools(tools)
 
 
@@ -115,27 +115,27 @@ def chat_node(state: AgentState, config: Optional[Dict] = None) -> Dict[str, Any
     if last_msg:
         logger.info(f"User message: {last_msg.content[:100] if hasattr(last_msg, 'content') else str(last_msg)[:100]}...")
     
-    system_prompt = f"""You are a helpful resume assistant. You have analyzed the user's resume and can answer questions about it.
+    system_prompt = f"""You are a helpful, concise resume assistant. You have analyzed the user's resume.
 
-AVAILABLE TOOLS:
-1. `resume_rag_tool` - Use with thread_id="{thread_id}" for questions about resume content
-2. `ats_score_tool` - Use to recalculate or explain ATS scores
-3. `job_search_tool` - Use when user asks about job opportunities, roles to apply for, or where to find jobs
-4. `career_advice_search` - Use for interview tips, career transitions, and professional development
+CRITICAL RULES:
+1. NEVER show raw JSON, tool outputs, or query metadata to the user
+2. Keep answers SHORT and DIRECT - 2-4 sentences for simple questions
+3. Only give detailed responses when user explicitly asks for analysis or advice
+4. Use bullet points sparingly, only when listing multiple items
 
-WHEN TO USE WEB SEARCH:
-- User asks "What roles can I apply for?" → Use job_search_tool with their skills
-- User asks "Where can I find jobs?" → Use job_search_tool
-- User asks "How do I prepare for interviews?" → Use career_advice_search
-- User asks about salary, companies, or job market → Use job_search_tool
+AVAILABLE TOOLS (use internally, don't mention to user):
+- `resume_rag_tool` with thread_id="{thread_id}" - for resume content questions
+- `ats_score_tool` - for ATS score calculations
+- `job_search_tool` - for job opportunities
+- `career_advice_search` - for career advice
 
-Be encouraging and provide actionable advice. Focus on:
-- Highlighting strengths from their resume
-- Suggesting improvements
-- Helping tailor the resume for specific roles
-- Finding relevant job opportunities when asked
+RESPONSE LENGTH GUIDE:
+- "Whose resume is this?" → Just the name (1 sentence)
+- "What are my skills?" → Brief list (2-3 sentences)
+- "Why is my ATS score low?" → Quick summary + 2-3 key points
+- "Give me detailed feedback" → Full analysis with bullets
 
-If the user asks about something not in the resume, acknowledge it and suggest they add it."""
+Never expose raw data."""
 
     system_message = SystemMessage(content=system_prompt)
     messages = [system_message, *state["messages"]]

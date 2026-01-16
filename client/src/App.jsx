@@ -18,6 +18,7 @@ const Profile = lazy(() => import("./Pages/Profile.jsx"));
 const MindMapPage = lazy(() => import("./Pages/MindMapPage.jsx"));
 const CertificationPage = lazy(() => import("./Pages/CertificationPage.jsx"));
 const ResumeAnalyzer = lazy(() => import("./Pages/ResumeAnalyzer.jsx"));
+const NotFound = lazy(() => import("./Pages/NotFound.jsx"));
 
 // ------------------------
 // Route Guards
@@ -165,8 +166,8 @@ export default function App() {
               }
             />
 
-            {/* 404 Fallback */}
-            <Route path="*" element={<Navigate to="/" replace />} />
+            {/* 404 Page */}
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
 

@@ -12,11 +12,15 @@ const resumeSessionSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
     required: true,
-    unique: true, // One session per user
+    index: true, // Index for efficient queries (no longer unique - allows multiple sessions)
   },
   threadId: {
     type: String,
     required: true,
+  },
+  title: {
+    type: String,
+    default: "Resume Analysis",
   },
   filename: {
     type: String,

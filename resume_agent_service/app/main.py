@@ -3,7 +3,8 @@ import json
 import asyncio
 import logging
 import traceback
-from fastapi import FastAPI, UploadFile, File, HTTPException
+import re
+from fastapi import FastAPI, UploadFile, File, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
@@ -20,6 +21,7 @@ from app.services.resume_service import (
 from app.tools.ats_scorer import calculate_ats_score
 from app.graph import resume_agent
 from app.memory.checkpointer import list_all_threads
+from app.memory.thread_store import get_user_threads, update_thread_ats_score
 
 # Configure logging
 logging.basicConfig(
@@ -32,6 +34,40 @@ settings = get_settings()
 
 # Track which threads have completed analysis
 _THREAD_ANALYSIS_COMPLETE: Dict[str, bool] = {}
+
+
+def clean_tool_output_from_response(text: str) -> str:
+    """
+    Remove raw JSON tool outputs from LLM response text.
+    The LLM sometimes includes the tool output JSON before its actual response.
+    """
+    if not text:
+        return text
+    
+    # Pattern to match JSON objects that look like tool output
+    # e.g., {"found": true, "content": "...", "_internal_note": "..."}
+    json_pattern = r'\{["\'](?:found|content|error|query|context)["\']:\s*(?:true|false|null|"[^"]*"|\'[^\']*\'|\[[^\]]*\]|\{[^}]*\})[^}]*\}'
+    
+    # Remove JSON blocks
+    cleaned = re.sub(json_pattern, '', text, flags=re.DOTALL)
+    
+    # Clean up any remaining artifacts
+    cleaned = cleaned.strip()
+    
+    # If cleaning removed everything, return original (edge case)
+    if not cleaned and text:
+        # Try simpler approach: find where actual text starts after JSON
+        if text.strip().startswith('{'):
+            # Find the last closing brace and take everything after
+            last_brace = text.rfind('}')
+            if last_brace != -1 and last_brace < len(text) - 1:
+                cleaned = text[last_brace + 1:].strip()
+        
+        # Still nothing? Return original
+        if not cleaned:
+            return text
+    
+    return cleaned
 
 app = FastAPI(
     title="Resume Agent Service",
@@ -95,12 +131,13 @@ async def health_check():
 @app.post("/resume/upload", response_model=ResumeAnalysisResponse)
 async def upload_resume(
     file: UploadFile = File(...),
-    thread_id: Optional[str] = None
+    thread_id: Optional[str] = None,
+    user_id: str = Query(..., description="User ID to associate this resume with")
 ):
     """
     Upload a PDF resume for analysis.
     """
-    logger.info(f"Resume upload requested: filename={file.filename}, thread_id={thread_id}")
+    logger.info(f"Resume upload requested: filename={file.filename}, thread_id={thread_id}, user_id={user_id}")
     
     if not file.filename.lower().endswith('.pdf'):
         raise HTTPException(status_code=400, detail="Only PDF files are supported.")
@@ -114,24 +151,21 @@ async def upload_resume(
     
     try:
         # Step 1: Ingest PDF and build vector store
-        logger.info(f"Ingesting PDF for thread {thread_id}")
-        ingest_result = ingest_resume_pdf(file_bytes, thread_id, file.filename)
-        logger.info(f"Ingest result: {ingest_result}")
+        logger.info(f"Ingesting PDF for thread {thread_id}, user {user_id}")
+        ingest_result = ingest_resume_pdf(file_bytes, thread_id, user_id, file.filename)
+        logger.info(f"Ingest result: pages={ingest_result['pages']}, chunks={ingest_result['chunks']}")
         
-        # Step 2: Retrieve full resume text for ATS analysis
-        retriever = get_retriever(thread_id)
-        if retriever is None:
-            raise HTTPException(status_code=500, detail="Failed to create retriever.")
-        
-        all_chunks = retriever.invoke("skills experience education projects summary contact")
-        full_text = "\n".join([doc.page_content for doc in all_chunks])
-        logger.info(f"Retrieved {len(all_chunks)} chunks, {len(full_text)} chars total")
+        # Step 2: Use full text directly from ingest (retriever may be empty due to eventual consistency)
+        full_text = ingest_result.get("full_text", "")
+        logger.info(f"Using {len(full_text)} chars for ATS analysis")
         
         # Step 3: Run ATS scoring
         logger.info("Calculating ATS score")
         ats_result = calculate_ats_score(full_text)
         logger.info(f"ATS score: {ats_result['total_score']}")
         
+        # Update ATS score in MongoDB
+        update_thread_ats_score(thread_id, ats_result["total_score"])
         _THREAD_ANALYSIS_COMPLETE[thread_id] = True
         
         return ResumeAnalysisResponse(
@@ -166,7 +200,10 @@ async def chat(request: ChatRequest):
             detail="No resume found for this thread. Please upload a resume first."
         )
     
-    config = {"configurable": {"thread_id": thread_id}}
+    config = {
+        "configurable": {"thread_id": thread_id},
+        "recursion_limit": 10  # Prevent infinite tool call loops
+    }
     input_state = {
         "messages": [HumanMessage(content=request.message)],
         "mode": "chat",
@@ -207,7 +244,10 @@ async def chat_stream(request: ChatRequest):
             detail="No resume found for this thread. Please upload a resume first."
         )
     
-    config = {"configurable": {"thread_id": thread_id}}
+    config = {
+        "configurable": {"thread_id": thread_id},
+        "recursion_limit": 10  # Prevent infinite tool call loops
+    }
     input_state = {
         "messages": [HumanMessage(content=request.message)],
         "mode": "chat",
@@ -219,6 +259,10 @@ async def chat_stream(request: ChatRequest):
     async def event_generator():
         """Generate SSE events from the LangGraph stream."""
         full_response = ""
+        in_tool_call = False
+        buffered_content = ""  # Buffer all content during/after tool calls
+        has_tool_been_called = False
+        final_answer_started = False
         
         try:
             logger.info(f"Starting stream for thread {thread_id}")
@@ -227,28 +271,75 @@ async def chat_stream(request: ChatRequest):
             async for event in resume_agent.astream_events(input_state, config=config, version="v2"):
                 event_type = event.get("event", "")
                 
-                # Log all events for debugging
-                if event_type not in ["on_chain_start", "on_chain_end", "on_parser_start", "on_parser_end"]:
-                    logger.debug(f"Event: {event_type}")
+                # Track tool call state
+                if event_type == "on_tool_start":
+                    in_tool_call = True
+                    has_tool_been_called = True
+                    tool_name = event.get("name", "tool")
+                    logger.info(f"Tool started: {tool_name}")
+                    yield f"data: {json.dumps({'status': 'Analyzing your resume...'})}\n\n"
+                
+                elif event_type == "on_tool_end":
+                    in_tool_call = False
+                    tool_name = event.get("name", "tool")
+                    logger.info(f"Tool ended: {tool_name}")
+                    # Reset buffer for fresh capture of LLM's synthesized response
+                    buffered_content = ""
                 
                 # Stream tokens from the chat model
-                if event_type == "on_chat_model_stream":
+                elif event_type == "on_chat_model_stream" and not in_tool_call:
                     chunk = event.get("data", {}).get("chunk")
                     if chunk and hasattr(chunk, "content") and chunk.content:
                         token = chunk.content
-                        full_response += token
-                        yield f"data: {json.dumps({'token': token})}\n\n"
-                
-                # Handle tool calls
-                elif event_type == "on_tool_start":
-                    tool_name = event.get("name", "tool")
-                    logger.info(f"Tool started: {tool_name}")
-                    yield f"data: {json.dumps({'status': f'Using {tool_name}...'})}\n\n"
-                
-                elif event_type == "on_tool_end":
-                    tool_name = event.get("name", "tool")
-                    logger.info(f"Tool ended: {tool_name}")
-                    
+                        
+                        if has_tool_been_called:
+                            # After a tool call, buffer content and look for answer patterns
+                            buffered_content += token
+                            
+                            # Check if we've reached the actual answer portion
+                            # Look for common answer patterns
+                            buffer_lower = buffered_content.lower()
+                            answer_indicators = [
+                                "the resume belongs to",
+                                "this resume is for",
+                                "the owner of this resume",
+                                "based on the resume",
+                                "according to the resume",
+                                "the resume shows",
+                                "from the resume",
+                                "i can see that",
+                                "the name on the resume",
+                                "your resume",
+                            ]
+                            
+                            for indicator in answer_indicators:
+                                if indicator in buffer_lower and not final_answer_started:
+                                    # Found the answer! Stream from this point
+                                    final_answer_started = True
+                                    idx = buffer_lower.find(indicator)
+                                    answer_text = buffered_content[idx:]
+                                    full_response = answer_text
+                                    yield f"data: {json.dumps({'token': answer_text})}\n\n"
+                                    break
+                            
+                            if final_answer_started:
+                                # Continue streaming subsequent tokens
+                                full_response += token
+                                yield f"data: {json.dumps({'token': token})}\n\n"
+                        else:
+                            # No tool call, stream directly
+                            full_response += token
+                            yield f"data: {json.dumps({'token': token})}\n\n"
+            
+            # If we buffered content but never found an answer pattern, send it all
+            if has_tool_been_called and not final_answer_started and buffered_content:
+                # Just send the last part (likely the answer)
+                lines = buffered_content.strip().split('\n')
+                # Take last few lines as the answer
+                answer = '\n'.join(lines[-3:]) if len(lines) > 3 else buffered_content
+                full_response = answer
+                yield f"data: {json.dumps({'token': answer})}\n\n"
+            
             logger.info(f"Stream complete, total response: {len(full_response)} chars")
             yield f"data: {json.dumps({'done': True, 'full_response': full_response})}\n\n"
             yield "data: [DONE]\n\n"
@@ -287,6 +378,112 @@ async def get_thread_info(thread_id: str):
     return metadata
 
 
+@app.get("/users/{user_id}/threads")
+async def get_user_conversation_history(user_id: str):
+    """
+    Get all conversation threads for a specific user.
+    Returns list of threads with resume metadata, sorted by most recent.
+    """
+    logger.info(f"Getting thread history for user {user_id}")
+    threads = get_user_threads(user_id)
+    return {
+        "user_id": user_id,
+        "threads": threads,
+        "count": len(threads)
+    }
+
+
+@app.get("/threads/{thread_id}/history")
+async def get_thread_message_history(thread_id: str):
+    """
+    Get full conversation history for a thread.
+    Retrieves messages from LangGraph checkpointer.
+    """
+    from app.memory.checkpointer import get_checkpointer
+    
+    logger.info(f"Getting message history for thread {thread_id}")
+    
+    checkpointer = get_checkpointer()
+    config = {"configurable": {"thread_id": thread_id}}
+    
+    try:
+        # Get the latest checkpoint for this thread
+        checkpoint_tuple = checkpointer.get_tuple(config)
+        if not checkpoint_tuple:
+            raise HTTPException(status_code=404, detail="Thread not found or no conversation history.")
+        
+        checkpoint = checkpoint_tuple.checkpoint
+        messages = checkpoint.get("channel_values", {}).get("messages", [])
+        
+        # Format messages for response
+        formatted_messages = []
+        for msg in messages:
+            role = "human" if hasattr(msg, "type") and msg.type == "human" else "ai"
+            content = msg.content if hasattr(msg, "content") else str(msg)
+            formatted_messages.append({"role": role, "content": content})
+        
+        return {
+            "thread_id": thread_id,
+            "messages": formatted_messages,
+            "message_count": len(formatted_messages)
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting thread history: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve history: {str(e)}")
+
+
+@app.get("/debug/vectorstore/{thread_id}")
+async def debug_vectorstore(thread_id: str):
+    """
+    Debug endpoint to check vector store contents for a thread.
+    """
+    from pymongo import MongoClient
+    import os
+    
+    client = MongoClient(os.getenv("MONGODB_URI"))
+    db = client[os.getenv("DB_NAME", "test")]
+    collection = db[os.getenv("COLLECTION_NAME", "vectorstore")]
+    
+    # Check how many documents exist for this thread
+    docs = list(collection.find({"thread_id": thread_id}).limit(5))
+    
+    # Check field names in documents
+    sample_fields = []
+    for doc in docs:
+        fields = list(doc.keys())
+        has_embedding = "embedding" in fields
+        has_embeddings = "embeddings" in fields
+        sample_fields.append({
+            "fields": fields,
+            "has_embedding_singular": has_embedding,
+            "has_embedding_plural": has_embeddings,
+            "text_preview": doc.get("text", doc.get("page_content", ""))[:200] if doc else None
+        })
+    
+    # Count total docs for thread
+    total_count = collection.count_documents({"thread_id": thread_id})
+    
+    # Test retriever
+    retriever = get_retriever(thread_id)
+    retriever_result = []
+    if retriever:
+        try:
+            results = retriever.invoke("skills experience education")
+            retriever_result = [{"content": r.page_content[:200], "metadata": r.metadata} for r in results]
+        except Exception as e:
+            retriever_result = [{"error": str(e)}]
+    
+    return {
+        "thread_id": thread_id,
+        "total_documents": total_count,
+        "sample_documents": sample_fields,
+        "retriever_test": retriever_result,
+        "has_resume": thread_has_resume(thread_id)
+    }
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(
@@ -295,3 +492,4 @@ if __name__ == "__main__":
         port=settings.PORT,
         reload=(settings.ENVIRONMENT == "development")
     )
+

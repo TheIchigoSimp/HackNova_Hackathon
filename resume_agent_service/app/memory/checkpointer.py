@@ -1,18 +1,24 @@
 """
 Checkpointer for LangGraph thread persistence.
 
-Uses MemorySaver for simplicity and full async support.
-SQLite was causing issues with async streaming.
+Uses MongoDB for persistent checkpoint storage across server restarts.
 """
+import os
+from dotenv import load_dotenv
+from langgraph.checkpoint.mongodb import MongoDBSaver
+from pymongo import MongoClient
 
-from langgraph.checkpoint.memory import MemorySaver
+# Load .env BEFORE accessing environment variables
+load_dotenv()
 
-# Use in-memory checkpointer which supports both sync and async
-# This is simpler and works perfectly for streaming
-checkpointer = MemorySaver()
+checkpointer = MongoDBSaver(
+    client=MongoClient(os.getenv("MONGODB_URI")),
+    db_name=os.getenv("DB_NAME", "test"),
+    collection_name="checkpoints",
+)
 
 
-def get_checkpointer() -> MemorySaver:
+def get_checkpointer() -> MongoDBSaver:
     """
     Get the memory checkpointer instance for thread memory.
     
@@ -28,7 +34,7 @@ def get_checkpointer() -> MemorySaver:
 
 def list_all_threads() -> list:
     """Retrieve all thread IDs from the checkpointer."""
-    # MemorySaver stores checkpoints in memory with thread_id as key
+    # MongoDBSaver stores checkpoints in memory with thread_id as key
     all_threads = set()
     try:
         for checkpoint in checkpointer.list(None):

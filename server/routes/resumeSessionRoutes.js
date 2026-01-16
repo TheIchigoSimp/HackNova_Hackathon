@@ -6,19 +6,32 @@ const router = express.Router();
 /**
  * Resume Session Routes
  * 
- * All routes are protected and operate on the authenticated user's session.
+ * All routes are protected and operate on the authenticated user's sessions.
+ * Users can have multiple sessions (history feature).
  */
 
-// Get the current user's resume session
-router.get('/', resumeSessionController.getSession);
+// Get all sessions for history panel
+router.get('/all', resumeSessionController.getAllSessions);
 
-// Create or update the user's resume session
-router.post('/', resumeSessionController.saveSession);
+// Get the current (most recent) session
+router.get('/current', resumeSessionController.getCurrentSession);
 
-// Add a chat message to the session history
+// Get a specific session by ID
+router.get('/:id', resumeSessionController.getSessionById);
+
+// Create a new session (after resume upload)
+router.post('/', resumeSessionController.createSession);
+
+// Update a specific session
+router.put('/:id', resumeSessionController.updateSession);
+
+// Add a chat message to a session
 router.post('/chat', resumeSessionController.addChatMessage);
 
-// Clear the user's resume session (for re-upload)
-router.delete('/', resumeSessionController.clearSession);
+// Delete a specific session
+router.delete('/:id', resumeSessionController.deleteSession);
+
+// Clear all sessions (use with caution)
+router.delete('/', resumeSessionController.clearAllSessions);
 
 export default router;

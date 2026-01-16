@@ -23,7 +23,7 @@ pip install -r requirements.txt
 ### 2. Configure Environment
 ```bash
 cp .env.example .env
-# Edit .env with your API keys (GROQ_API_KEY required)
+# Edit .env with your API keys (GOOGLE_API_KEY required)
 ```
 
 ### 3. Run the Service
@@ -150,7 +150,7 @@ resume_agent_service/
 
 - **Framework**: FastAPI
 - **AI Orchestration**: LangGraph
-- **LLM**: Groq (openai/gpt-oss-120b)
+- **LLM**: Google Gemini (gemini-3.0-experimental)
 - **Embeddings**: HuggingFace (sentence-transformers/all-MiniLM-L6-v2)
 - **Vector Store**: FAISS
 - **Web Search**: DuckDuckGo (no API key required)

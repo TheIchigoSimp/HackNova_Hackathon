@@ -3,7 +3,7 @@ from langchain_core.tools import tool
 from app.services.resume_service import get_retriever, get_thread_metadata
 
 @tool
-def resume_rag_tool(query: str, thread_id: Optional[str] = None) -> dict:
+def resume_rag_tool(query: str, thread_id: Optional[str] = None) -> str:
     """
     Retrieve relevant information from the uploaded resume for this chat thread.
     Always include the thread_id when calling this tool.
@@ -13,22 +13,19 @@ def resume_rag_tool(query: str, thread_id: Optional[str] = None) -> dict:
         thread_id: The unique identifier for the current chat thread.
     
     Returns:
-        dict: Contains context snippets, metadata, and source filename.
+        str: Resume content relevant to the query, or an error message.
     """
     retriever = get_retriever(thread_id)
     if retriever is None:
-        return {
-            "error": "No resume indexed for this thread. Please upload a resume first.",
-            "query": query,
-        }
+        return "No resume has been uploaded for this session. Please upload a resume first."
     
     results = retriever.invoke(query)
-    context = [doc.page_content for doc in results]
-    metadata = [doc.metadata for doc in results]
     
-    return {
-        "query": query,
-        "context": context,
-        "metadata": metadata,
-        "source_file": get_thread_metadata(str(thread_id)).get("filename"),
-    }
+    # Handle empty results
+    if not results:
+        return "I couldn't find specific information about that in your resume. Could you rephrase your question?"
+    
+    # Return only the text content as a simple string
+    resume_text = "\n\n".join([doc.page_content for doc in results])
+    return resume_text
+

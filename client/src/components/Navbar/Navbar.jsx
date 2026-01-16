@@ -5,8 +5,10 @@ import { authClient } from "../../lib/auth-client";
 import SlideButton from "../../components/Buttons/SlideButton";
 import pathgenie from "../../assets/pathgeniebanner.png";
 import { useNavbarVisibility } from "../../hooks/useNavbarVisibility";
-import { navLinks, linkBaseClasses, activeLinkClasses } from "./constants";
+import { navLinks } from "./constants";
 import { GrLogin, GrLogout } from "react-icons/gr";
+import { FiSun, FiMoon } from "react-icons/fi";
+import { useTheme } from "../../contexts/ThemeContext";
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -14,6 +16,7 @@ const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const isNavbarVisible = useNavbarVisibility(800, 43);
+  const { isDarkMode, toggleTheme } = useTheme();
 
   const toggleMenu = useCallback(() => {
     setIsMenuOpen((prev) => !prev);
@@ -30,6 +33,16 @@ const Navbar = () => {
       setIsSigningOut(false);
     }
   }, [navigate]);
+
+  const ThemeToggle = () => (
+    <button
+      onClick={toggleTheme}
+      className="p-2 rounded-lg text-[#94a3b8] hover:text-white hover:bg-[rgba(102,126,234,0.1)] transition-all duration-300"
+      aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
+    >
+      {isDarkMode ? <FiSun size={20} /> : <FiMoon size={20} />}
+    </button>
+  );
 
   const AuthButton = () => {
     if (isPending) {
@@ -133,13 +146,18 @@ const Navbar = () => {
                   }
                 >
                   {label}
-                  <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-gradient-to-r from-[#667eea] to-[#764ba2] transition-all duration-300 group-hover:w-full"></span>
                 </NavLink>
               ))}
             </div>
           )}
           
-          {!isMenuOpen && <AuthButton />}
+          {/* Right side: Theme toggle + Auth button */}
+          {!isMenuOpen && (
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              <AuthButton />
+            </div>
+          )}
         </div>
 
         {/* Mobile Menu */}
@@ -163,7 +181,8 @@ const Navbar = () => {
                 </NavLink>
               ))}
 
-              <div className="pt-4 w-full flex justify-center">
+              <div className="pt-4 w-full flex flex-col items-center gap-4">
+                <ThemeToggle />
                 {isPending ? (
                   <span className="text-[#94a3b8]">Loading...</span>
                 ) : (
@@ -179,3 +198,4 @@ const Navbar = () => {
 };
 
 export default Navbar;
+

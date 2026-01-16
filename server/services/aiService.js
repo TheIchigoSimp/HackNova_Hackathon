@@ -1,17 +1,16 @@
-import Groq from 'groq-sdk';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import dotenv from 'dotenv';
 dotenv.config();
 
-const fetchGroqData = async (type, input, mainTopic, userProfile = {}) => {
-  const API_KEY = process.env.GROQ_API_KEY;
+const fetchGeminiData = async (type, input, mainTopic, userProfile = {}) => {
+  const API_KEY = process.env.GOOGLE_API_KEY;
   
   if (!API_KEY) {
-    throw new Error('GROQ_API_KEY is not configured');
+    throw new Error('GOOGLE_API_KEY is not configured');
   }
 
-  const groq = new Groq({
-    apiKey: API_KEY,
-  });
+  const genAI = new GoogleGenerativeAI(API_KEY);
+  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
   let systemPrompt;
   switch (type) {
@@ -309,61 +308,59 @@ Clear, Simple, Professional, Accessible for Indian learners
       throw new Error('Invalid request type');
   }
 
-  const messages = [
-    {
-      role: 'system',
-      content: systemPrompt,
-    },
-    {
-      role: 'user',
-      content: input,
-    },
-  ];
+  const prompt = `${systemPrompt}\n\nUser input: ${input}`;
 
   try {
-    const chatCompletion = await groq.chat.completions.create({
-      messages,
-      model: 'openai/gpt-oss-120b', 
-      temperature: 0.7,
-      max_tokens: 4000,
-      top_p: 0.9,
-    });
-
-    const text = chatCompletion.choices[0]?.message?.content;
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+    
     if (!text) {
-      throw new Error('No response content from Groq API');
+      throw new Error('No response content from Gemini API');
     }
 
+    // Clean the response - remove markdown code blocks if present
+    let cleanText = text.trim();
+    if (cleanText.startsWith('```json')) {
+      cleanText = cleanText.slice(7);
+    } else if (cleanText.startsWith('```')) {
+      cleanText = cleanText.slice(3);
+    }
+    if (cleanText.endsWith('```')) {
+      cleanText = cleanText.slice(0, -3);
+    }
+    cleanText = cleanText.trim();
+
     try {
-      return JSON.parse(text);
+      return JSON.parse(cleanText);
     } catch (parseError) {
-      console.error('Failed to parse AI response as JSON:', text);
+      console.error('Failed to parse AI response as JSON:', cleanText);
       throw new Error('Invalid response format from AI');
     }
   } catch (error) {
-    console.error('Groq API error:', error.message);
-    throw new Error('Failed to fetch data from Groq');
+    console.error('Gemini API error:', error.message);
+    throw new Error('Failed to fetch data from Gemini');
   }
 };
 
 export const generateBasicMindmap = async (title, userProfile) => {
-  const data = await fetchGroqData('basicMindmap', title, title, userProfile);
+  const data = await fetchGeminiData('basicMindmap', title, title, userProfile);
   return data; // Returns { nodes: [...] }
 };
 
 export const generateSubtopics = async (parentLabel, mainTopic, userProfile) => {
-  const data = await fetchGroqData('subtopics', parentLabel, mainTopic, userProfile);
+  const data = await fetchGeminiData('subtopics', parentLabel, mainTopic, userProfile);
   return data; // Returns { nodes: [...] }
 };
 
 export const gatherResources = async (label, mainTopic, userProfile) => {
-  const data = await fetchGroqData('resources', label, mainTopic, userProfile);
+  const data = await fetchGeminiData('resources', label, mainTopic, userProfile);
   return data; // Returns { resources: { links: [], images: [], ... } }
 };
 
 export const generateCertifications = async (domain, experience, skills) => {
   const input = `Domain: ${domain}, Experience: ${experience}, Skills: ${skills}`;
-  const data = await fetchGroqData('certificationRecommendation', input, domain, experience);
+  const data = await fetchGeminiData('certificationRecommendation', input, domain, experience);
   return data;
 };
 

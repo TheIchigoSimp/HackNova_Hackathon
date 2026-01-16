@@ -3,3 +3,9 @@
 rules
 venv
 __pycache__
+.python-version
+main.py
+pyproject.toml
+uv.lock
+.agent
+__pycache__

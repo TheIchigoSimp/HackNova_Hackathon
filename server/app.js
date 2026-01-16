@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
+import rateLimit from 'express-rate-limit';
 import logger from './utils/logger.js';
 import constants from './constants.js';
 import cookieParser from 'cookie-parser';
@@ -18,29 +19,15 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
 const { morganFormat } = constants;
 
-//Rate limit middleware
-const rateLimit = (req, res, next) => {
-  const limit = 100; // Limit to 100 requests
-  const timeWindow = 15 * 60 * 1000; // 15 minutes
-
-  if (!req.session) {
-    req.session = {};
-    req.session.requests = [];
-  }
-
-  const now = Date.now();
-  req.session.requests = req.session.requests.filter(
-    (timestamp) => now - timestamp < timeWindow
-  );
-
-  if (req.session.requests.length >= limit) {
-    return res.status(429).json({ message: 'Too many requests' });
-  }
-
-  req.session.requests.push(now);
-  next();
-};
-app.use(rateLimit);
+// Rate limit middleware (production-ready)
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  message: { success: false, message: 'Too many requests, please try again later.' },
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+});
+app.use(limiter);
 
 /**
  * Middleware to log requests.
