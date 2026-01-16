@@ -1,7 +1,7 @@
 
 # Path Genie
 
-Welcome to  **Path Genie** ! 🎉 Your ultimate companion for creating personalized learning journeys. Whether you're diving into "Learn Python Programming" or exploring "Quantum Physics," Path Genie transforms your topic of interest into a vibrant, interactive learning path. Using the magic of  **React Flow** , we visualize your learning milestones, and with the power of  **Gemini's AI API** , we fetch top-notch resources like YouTube videos, blogs, and articles to supercharge your learning experience. Let's embark on this adventure together! 🚀
+Welcome to  **Path Genie** ! 🎉 Your ultimate companion for creating personalized learning journeys. Whether you're diving into "Learn Python Programming" or exploring "Quantum Physics," Path Genie transforms your topic of interest into a vibrant, interactive learning path. Using the magic of  **React Flow** , we visualize your learning milestones, and with the power of  **Google Gemini AI** , we fetch top-notch resources like YouTube videos, blogs, and articles to supercharge your learning experience. Let's embark on this adventure together! 🚀
 
 ## Table of Contents
 
@@ -19,7 +19,7 @@ Welcome to  **Path Genie** ! 🎉 Your ultimate companion for creating personali
 ## Features
 
 * 🌟  **Dynamic Learning Paths** : Watch your topic transform into a structured, interactive journey with React Flow.
-* 📚  **Resource Integration** : Get the best learning materials powered by Gemini's AI API.
+* 📚  **Resource Integration** : Get the best learning materials powered by Google Gemini AI.
 * 🖱️  **User-Friendly Interface** : Effortlessly enter topics and navigate your visual path.
 * ✏️  **Customizable Paths** : Tweak nodes and connections to make the path truly yours.
 * 📱  **Responsive Design** : Learn on the go, whether on desktop or mobile.
@@ -33,7 +33,7 @@ Welcome to  **Path Genie** ! 🎉 Your ultimate companion for creating personali
 * 🖥️  **Frontend** : React, React Flow (for those awesome visual paths)
 * 🛠️  **Backend** : Node.js, Express
 * 🗄️  **Database** : MongoDB (keeping your data safe)
-* 🔌  **API** : Gemini AI API (your intelligent resource genie)
+* 🔌  **API** : Google Gemini AI (your intelligent resource genie)
 * 🔐  **Authentication** : Better Auth (email/password & GitHub SSO)
 * 🎨  **Styling** : Tailwind CSS (looking sharp!)
 * 🤖  **Resume Agent** : Python, FastAPI, LangGraph, FAISS (standalone microservice)
@@ -56,7 +56,7 @@ Before you start, make sure you have:
 * 🟢 Node.js (v18 or later)
 * 🟢 MongoDB (local or cloud, like MongoDB Atlas)
 * 🟢 Git
-* 🟢 A Gemini API key (grab it from [Gemini Console](https://console.gemini.ai/))
+* 🟢 A Google API key (grab it from [Google AI Studio](https://aistudio.google.com/))
 * 🟢 Python 3.10+ (for Resume Agent Service)
 * 🟢 A GitHub OAuth app (for that smooth SSO login)
 
@@ -106,7 +106,7 @@ GITHUB_CLIENT_SECRET=your_github_client_secret
 MONGODB_URI=your_mongodb_uri
 CLIENT_URL=http://localhost:5173
 SERVER_URL=http://localhost:8000
-GEMINI_API_KEY=your_gemini_api_key
+GOOGLE_API_KEY=your_google_api_key
 NODE_ENV=development
 ```
 
@@ -122,7 +122,7 @@ VITE_RESUME_AGENT_URL=http://localhost:8001
 Create a `.env` file in the `resume_agent_service` directory with:
 
 ```bash
-GEMINI_API_KEY=your_gemini_api_key
+GOOGLE_API_KEY=your_google_api_key
 ```
 
 > **Note** : For production, set `NODE_ENV=production` in the backend `.env` and `VITE_MODE=production` in the frontend `.env`.
@@ -161,7 +161,7 @@ Resume Agent API available at `http://localhost:8001`.
 * Visit `http://localhost:5173` and log in (or sign up) with email/password or GitHub.
 * Type in a topic like "Learn Python Programming" and hit enter.
 * Watch as Path Genie crafts a beautiful learning path with React Flow.
-* Click on nodes to discover curated resources from Gemini's AI API.
+* Click on nodes to discover curated resources from Google Gemini AI.
 
 5. **Use the Resume Agent** 📝:
 
@@ -244,7 +244,7 @@ Please follow our Code of Conduct and ensure your code adheres to the project's 
 ## Acknowledgements
 
 * [React Flow](https://reactflow.dev/) for the interactive flow-based UI.
-* [Gemini AI API](https://gemini.ai/) for providing intelligent learning resources.
+* [Google Gemini AI](https://ai.google.dev/) for providing intelligent learning resources.
 * [Better Auth](https://www.better-auth.com/) for secure authentication.
 * [Mongoose](https://mongoosejs.com/) for MongoDB integration.
 * [LangGraph](https://langchain-ai.github.io/langgraph/) for AI agent orchestration.
