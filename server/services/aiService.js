@@ -4,13 +4,13 @@ dotenv.config();
 
 const fetchGeminiData = async (type, input, mainTopic, userProfile = {}) => {
   const API_KEY = process.env.GOOGLE_API_KEY;
-  
+
   if (!API_KEY) {
     throw new Error('GOOGLE_API_KEY is not configured');
   }
 
   const genAI = new GoogleGenerativeAI(API_KEY);
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+  const model = genAI.getGenerativeModel({ model: 'gemini-3-flash-preview' });
 
   let systemPrompt;
   switch (type) {
@@ -314,7 +314,7 @@ Clear, Simple, Professional, Accessible for Indian learners
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
-    
+
     if (!text) {
       throw new Error('No response content from Gemini API');
     }
